@@ -94,16 +94,15 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
 
       final Set<Marker> newMarkers = {};
 
-      for (final hospital in hospitals) {
-        final icon = await MarkerGenerator.createCustomMarkerBitmap(
-          hospital.name,
-        );
+      final BitmapDescriptor customIcon =
+          await MarkerGenerator.createCustomMarkerBitmap();
 
+      for (final hospital in hospitals) {
         newMarkers.add(
           Marker(
             markerId: MarkerId(hospital.placeId),
             position: LatLng(hospital.lat, hospital.lng),
-            icon: icon,
+            icon: customIcon,
             onTap: () {
               _showHospitalDetails(hospital);
             },
