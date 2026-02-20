@@ -13,9 +13,7 @@ class HospitalMapScreen extends StatefulWidget {
 
 class _HospitalMapScreenState extends State<HospitalMapScreen> {
   final Set<Marker> _markers = {};
-  final PlacesService _placesService = PlacesService(
-    'AIzaSyCf5_TrDbWy4S3wmP5R4PR1uf3ZjYHiqIg',
-  );
+  final PlacesService _placesService = PlacesService();
   LatLng? _currentPosition;
   bool _isLoading = true;
 
