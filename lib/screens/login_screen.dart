@@ -73,7 +73,7 @@ class LoginScreen extends StatelessWidget {
                     await authService.loginWithKakao();
                     if (context.mounted && authService.isLoggedIn) {
                       if (authService.currentUser?.isOnboarded ?? false) {
-                        context.go('/home');
+                        context.go('/chat');
                       } else {
                         context.go('/onboarding');
                       }
