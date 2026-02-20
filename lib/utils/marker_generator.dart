@@ -4,8 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MarkerGenerator {
-  static Future<BitmapDescriptor> createCustomMarkerBitmap(
-    String title, {
+  static Future<BitmapDescriptor> createCustomMarkerBitmap({
     bool isSelected = false,
   }) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
