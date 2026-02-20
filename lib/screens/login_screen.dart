@@ -43,7 +43,6 @@ class LoginScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
-              // Placeholder for the 3D Robot Image
               Center(
                 child: Container(
                   width: 200,
@@ -73,7 +72,7 @@ class LoginScreen extends StatelessWidget {
                     await authService.loginWithKakao();
                     if (context.mounted && authService.isLoggedIn) {
                       if (authService.currentUser?.isOnboarded ?? false) {
-                        context.go('/home');
+                        context.go('/chat');
                       } else {
                         context.go('/onboarding');
                       }

@@ -109,7 +109,7 @@ class CompletionScreen extends StatelessWidget {
                   backgroundColor: const Color(0xFFD32F2F), // Red color
                   textColor: Colors.white,
                   onPressed: () {
-                    context.go('/home');
+                    context.go('/chat');
                   },
                 ),
                 const SizedBox(height: 40),

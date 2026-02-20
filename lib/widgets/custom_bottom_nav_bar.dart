@@ -16,12 +16,10 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100, // Keep height for the big button
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).padding.bottom,
-      ), // Respect Safe Area
+      height: 100,
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
-        color: const Color(0xFFD9D9D9), // Light grey background
+        color: const Color(0xFFD9D9D9),
         borderRadius: currentIndex == 1
             ? BorderRadius.zero
             : const BorderRadius.only(
@@ -29,17 +27,15 @@ class CustomBottomNavBar extends StatelessWidget {
                 topRight: Radius.circular(12),
               ),
       ),
-      // Margin removed to attach to bottom
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Emergency Button
           GestureDetector(
             onTap: onEmergencyTap,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF222222), // Dark pill
+                color: const Color(0xFF222222),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Text(
@@ -54,18 +50,17 @@ class CustomBottomNavBar extends StatelessWidget {
             ),
           ),
           // Navigation Items
-          _buildNavItem(icon: Icons.home_outlined, label: 'Home', index: 0),
           _buildNavItem(
             icon: Icons.chat_bubble_outline,
             label: 'Chat',
-            index: 1,
+            index: 0,
           ),
           _buildNavItem(
             icon: Icons.location_on_outlined,
             label: '병원 찾기',
-            index: 2,
+            index: 1,
           ),
-          _buildNavItem(icon: Icons.person_outline, label: 'Profile', index: 3),
+          _buildNavItem(icon: Icons.person_outline, label: 'Profile', index: 2),
 
           // profile
         ],

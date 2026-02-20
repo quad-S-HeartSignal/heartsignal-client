@@ -6,7 +6,7 @@ import 'screens/signup_step2_birthdate_screen.dart';
 import 'screens/completion_screen.dart';
 import 'screens/onboarding_step1_screen.dart';
 import 'screens/onboarding_step2_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/root_screen.dart';
 import 'screens/emergency_screen.dart';
 import 'screens/hospital_map_screen.dart';
 
@@ -16,7 +16,7 @@ final router = GoRouter(
     GoRoute(path: '/', builder: (context, state) => const IntroScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
-      path: '/signup/guardian', // Adjusted to match my implementation
+      path: '/signup/guardian',
       builder: (context, state) => const SignupStep1GuardianScreen(),
     ),
     GoRoute(
@@ -27,7 +27,7 @@ final router = GoRouter(
       path: '/completion',
       builder: (context, state) => const CompletionScreen(),
     ),
-    GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+    GoRoute(path: '/chat', builder: (context, state) => const RootScreen()),
     GoRoute(
       path: '/emergency',
       builder: (context, state) => const EmergencyScreen(),
