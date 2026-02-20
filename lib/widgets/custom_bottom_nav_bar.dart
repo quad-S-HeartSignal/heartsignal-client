@@ -20,7 +20,7 @@ class CustomBottomNavBar extends StatelessWidget {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
         color: const Color(0xFFD9D9D9),
-        borderRadius: currentIndex == 1
+        borderRadius: currentIndex == 0
             ? BorderRadius.zero
             : const BorderRadius.only(
                 topLeft: Radius.circular(12),
