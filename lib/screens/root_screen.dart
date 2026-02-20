@@ -1,0 +1,44 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
+import 'chat_screen.dart';
+import 'hospital_map_screen.dart';
+import 'profile_screen.dart';
+
+class RootScreen extends StatefulWidget {
+  const RootScreen({super.key});
+
+  @override
+  State<RootScreen> createState() => _RootScreenState();
+}
+
+class _RootScreenState extends State<RootScreen> {
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = [
+    const ChatScreen(),
+    const HospitalMapScreen(),
+    const Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(child: ProfileScreen()),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(index: _currentIndex, children: _screens),
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        onEmergencyTap: () {
+          context.push('/emergency');
+        },
+      ),
+    );
+  }
+}

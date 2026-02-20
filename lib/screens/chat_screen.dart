@@ -15,7 +15,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
-  final List<String> _messages = []; // Only user messages for now
+  final List<String> _messages = [];
   bool _showRecommendations = true;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late AnimationController _animationController;
@@ -27,7 +27,6 @@ class _ChatScreenState extends State<ChatScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    // Start animation slightly after build
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) _animationController.forward();
     });
@@ -44,7 +43,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (text.isEmpty) return;
     _textController.clear();
     setState(() {
-      _messages.insert(0, text); // Add new message to the start
+      _messages.insert(0, text);
       _showRecommendations = false;
     });
   }
@@ -60,7 +59,7 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey, // Key to control the drawer
+      key: _scaffoldKey,
       backgroundColor: Colors.white,
       appBar: CustomHeader(
         showBackButton: false,
@@ -69,7 +68,7 @@ class _ChatScreenState extends State<ChatScreen>
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
       ),
-      drawer: const ChatHistoryDrawer(), // Drawer attached here
+      drawer: const ChatHistoryDrawer(),
       body: Column(
         children: [
           Expanded(
@@ -78,9 +77,6 @@ class _ChatScreenState extends State<ChatScreen>
                 : _buildMessageList(),
           ),
           _buildInputArea(),
-          SizedBox(
-            height: MediaQuery.of(context).viewInsets.bottom > 0 ? 0 : 100,
-          ),
         ],
       ),
     );
@@ -122,10 +118,6 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Widget _buildAnimatedButton(String text, int index) {
-    // Staggered interval: Start later for higher index
-    // 0: 0.0 - 0.6
-    // 1: 0.2 - 0.8
-    // 2: 0.4 - 1.0
     final double start = index * 0.2;
     final double end = start + 0.6;
 
@@ -138,10 +130,7 @@ class _ChatScreenState extends State<ChatScreen>
         );
 
     final Animation<Offset> slideAnimation =
-        Tween<Offset>(
-          begin: const Offset(0, 0.5), // Start slightly below
-          end: Offset.zero,
-        ).animate(
+        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
           CurvedAnimation(
             parent: _animationController,
             curve: Interval(start, end, curve: Curves.easeOut),
@@ -174,7 +163,6 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Widget _buildMessageList() {
-    // Basic list view for messages
     if (_messages.isEmpty) {
       return Center(
         child: Text(
@@ -184,12 +172,12 @@ class _ChatScreenState extends State<ChatScreen>
       );
     }
     return ListView.builder(
-      reverse: true, // Start from bottom
+      reverse: true,
       padding: const EdgeInsets.all(16.0),
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         return Align(
-          alignment: Alignment.centerRight, // User messages on right
+          alignment: Alignment.centerRight,
           child: Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
@@ -211,7 +199,7 @@ class _ChatScreenState extends State<ChatScreen>
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0), // Input area background
+        color: const Color(0xFFE0E0E0),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -221,12 +209,12 @@ class _ChatScreenState extends State<ChatScreen>
         children: [
           IconButton(
             icon: const Icon(Icons.add, color: Colors.black),
-            onPressed: () {}, // Plus button action
+            onPressed: () {},
           ),
           Expanded(
             child: TextField(
               controller: _textController,
-              onTap: _hideRecommendations, // Hide recommendations on tap
+              onTap: _hideRecommendations,
               decoration: InputDecoration(
                 hintText: '메시지를 입력하세요..',
                 hintStyle: GoogleFonts.notoSans(color: Colors.grey[600]),
@@ -238,7 +226,7 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           IconButton(
             icon: const Icon(Icons.mic, color: Colors.black),
-            onPressed: () {}, // Mic button action
+            onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.send, color: Colors.black),

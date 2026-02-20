@@ -43,7 +43,6 @@ class LoginScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
-              // Placeholder for the 3D Robot Image
               Center(
                 child: Container(
                   width: 200,

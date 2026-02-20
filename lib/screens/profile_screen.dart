@@ -187,7 +187,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 100), // Spacer for CustomBottomNavBar
+          const SizedBox(height: 40),
         ],
       ),
     );
