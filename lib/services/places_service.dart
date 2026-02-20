@@ -8,7 +8,6 @@ import '../models/hospital_model.dart';
 class PlacesService {
   String get _backendUrl {
     if (kReleaseMode) {
-      // TODO: Replace with production URL
       return 'http://your-production-url.com';
     }
     if (Platform.isAndroid) {
