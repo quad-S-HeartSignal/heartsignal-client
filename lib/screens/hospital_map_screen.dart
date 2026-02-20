@@ -12,7 +12,6 @@ class HospitalMapScreen extends StatefulWidget {
 }
 
 class _HospitalMapScreenState extends State<HospitalMapScreen> {
-  GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
   final PlacesService _placesService = PlacesService(
     'AIzaSyCf5_TrDbWy4S3wmP5R4PR1uf3ZjYHiqIg',
@@ -30,33 +29,57 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
+    try {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _isLoading = false;
+        });
         return;
       }
+
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _isLoading = false;
+      });
+
+      _fetchNearbyHospitals();
+    } catch (e) {
+      print('Error getting location: \$e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to get current location: \$e')),
+        );
+      }
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _isLoading = false;
-    });
-
-    _fetchNearbyHospitals();
   }
 
   Future<void> _fetchNearbyHospitals() async {
@@ -107,7 +130,6 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
                 target: _currentPosition!,
                 zoom: 14.0,
               ),
-              onMapCreated: (controller) => _mapController = controller,
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
               markers: _markers,
