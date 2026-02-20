@@ -1,35 +1,49 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../models/hospital_model.dart';
 
 class PlacesService {
-  final String apiKey;
-
-  PlacesService(this.apiKey);
+  String get _backendUrl {
+    if (kReleaseMode) {
+      return 'http://your-production-url.com';
+    }
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:3000';
+    }
+    return 'http://localhost:3000';
+  }
 
   Future<List<Hospital>> fetchNearbyHospitals(
     LatLng location, {
     int radius = 1500,
-    String type = 'hospital',
+    String? category,
   }) async {
-    final String url =
-        'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=$radius&type=$type&key=$apiKey';
+    final queryParameters = {
+      'lat': location.latitude.toString(),
+      'lng': location.longitude.toString(),
+      'radius': radius.toString(),
+    };
+    if (category != null) {
+      queryParameters['category'] = category;
+    }
 
-    final response = await http.get(Uri.parse(url));
+    final uri = Uri.parse(
+      '$_backendUrl/api/hospitals/nearby',
+    ).replace(queryParameters: queryParameters);
+
+    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+      final jsonResponse = json.decode(response.body);
 
-      if (data['status'] == 'OK') {
-        final List<dynamic> results = data['results'];
+      if (jsonResponse['success'] == true) {
+        final List<dynamic> results = jsonResponse['data'];
         return results.map((e) => Hospital.fromJson(e)).toList();
       } else {
-        // Handle other statuses (ZERO_RESULTS, OVER_QUERY_LIMIT, REQUEST_DENIED, etc.)
-        print('Places API Error: ${data['status']}');
-        if (data['error_message'] != null) {
-          print('Error Message: ${data['error_message']}');
-        }
+        print('Backend API Error: ${jsonResponse['message']}');
         return [];
       }
     } else {

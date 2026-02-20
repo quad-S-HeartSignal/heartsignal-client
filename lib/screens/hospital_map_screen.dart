@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/hospital_model.dart';
 import '../services/places_service.dart';
+import '../utils/marker_generator.dart';
 
 class HospitalMapScreen extends StatefulWidget {
   const HospitalMapScreen({super.key});
@@ -12,11 +13,8 @@ class HospitalMapScreen extends StatefulWidget {
 }
 
 class _HospitalMapScreenState extends State<HospitalMapScreen> {
-  GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
-  final PlacesService _placesService = PlacesService(
-    'AIzaSyCf5_TrDbWy4S3wmP5R4PR1uf3ZjYHiqIg',
-  );
+  final PlacesService _placesService = PlacesService();
   LatLng? _currentPosition;
   bool _isLoading = true;
 
@@ -30,33 +28,57 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
+    try {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _isLoading = false;
+        });
         return;
       }
+
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _isLoading = false;
+      });
+
+      _fetchNearbyHospitals();
+    } catch (e) {
+      print('Error getting location: \$e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to get current location: \$e')),
+        );
+      }
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _isLoading = false;
-    });
-
-    _fetchNearbyHospitals();
   }
 
   Future<void> _fetchNearbyHospitals() async {
@@ -66,27 +88,127 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
       final hospitals = await _placesService.fetchNearbyHospitals(
         _currentPosition!,
       );
+
+      final Set<Marker> newMarkers = {};
+
+      for (final hospital in hospitals) {
+        final icon = await MarkerGenerator.createCustomMarkerBitmap(
+          hospital.name,
+        );
+
+        newMarkers.add(
+          Marker(
+            markerId: MarkerId(hospital.placeId),
+            position: LatLng(hospital.lat, hospital.lng),
+            icon: icon,
+            onTap: () {
+              _showHospitalDetails(hospital);
+            },
+          ),
+        );
+      }
+
       setState(() {
         _markers.clear();
-        for (final hospital in hospitals) {
-          _markers.add(
-            Marker(
-              markerId: MarkerId(hospital.placeId),
-              position: LatLng(hospital.lat, hospital.lng),
-              infoWindow: InfoWindow(
-                title: hospital.name,
-                snippet: hospital.address,
-              ),
-            ),
-          );
-        }
+        _markers.addAll(newMarkers);
       });
     } catch (e) {
       print('Error fetching hospitals: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load hospitals')));
+      ).showSnackBar(const SnackBar(content: Text('Failed to load hospitals')));
     }
+  }
+
+  void _showHospitalDetails(Hospital hospital) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      hospital.name,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: hospital.isOpen
+                          ? Colors.blue.withOpacity(0.1)
+                          : Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      hospital.isOpen ? '영업중' : '영업종료',
+                      style: TextStyle(
+                        color: hospital.isOpen ? Colors.blue : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.grey, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      hospital.address,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // TODO: Navigation to hospital or call logic
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF5252),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    '길찾기',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -107,7 +229,6 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
                 target: _currentPosition!,
                 zoom: 14.0,
               ),
-              onMapCreated: (controller) => _mapController = controller,
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
               markers: _markers,
