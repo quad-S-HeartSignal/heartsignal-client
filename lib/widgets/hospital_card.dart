@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/hospital.dart';
+import '../models/hospital_model.dart';
 
 class HospitalCard extends StatelessWidget {
   final Hospital hospital;
@@ -14,11 +14,10 @@ class HospitalCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16.0),
-        color: Colors.white, // Background for the card
+        color: Colors.white,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Left Side: Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,94 +30,54 @@ class HospitalCard extends StatelessWidget {
                         color: Colors.black,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        hospital.name,
-                        style: GoogleFonts.notoSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, size: 14, color: Colors.black),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${hospital.rating} (${hospital.reviewCount})',
-                        style: GoogleFonts.notoSans(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                      Expanded(
+                        child: Text(
+                          hospital.name,
+                          style: GoogleFonts.notoSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[400]!),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${hospital.distance} km',
-                      style: GoogleFonts.notoSans(
-                        fontSize: 11,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   Text(
                     hospital.address,
                     style: GoogleFonts.notoSans(
                       fontSize: 12,
                       color: Colors.grey[600],
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    hospital.phoneNumber,
-                    style: GoogleFonts.notoSans(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    children: hospital.tags.map((tag) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          tag,
-                          style: GoogleFonts.notoSans(
-                            fontSize: 10,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: hospital.isOpen
+                          ? Colors.blue.withAlpha(25)
+                          : Colors.red.withAlpha(25),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      hospital.isOpen ? '영업중' : '영업종료',
+                      style: GoogleFonts.notoSans(
+                        fontSize: 12,
+                        color: hospital.isOpen ? Colors.blue : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 16),
-            // Right Side: Image Placeholder
             Container(
               width: 80,
               height: 80,

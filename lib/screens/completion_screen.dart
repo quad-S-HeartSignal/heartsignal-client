@@ -53,7 +53,7 @@ class CompletionScreen extends StatelessWidget {
                     width: 200,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withAlpha(127),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(

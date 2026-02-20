@@ -43,7 +43,7 @@ class PlacesService {
         final List<dynamic> results = jsonResponse['data'];
         return results.map((e) => Hospital.fromJson(e)).toList();
       } else {
-        print('Backend API Error: ${jsonResponse['message']}');
+        debugPrint('Backend API Error: ${jsonResponse['message']}');
         return [];
       }
     } else {

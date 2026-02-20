@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../models/hospital.dart';
+import 'package:geolocator/geolocator.dart';
+import '../models/hospital_model.dart';
 import '../widgets/hospital_card.dart';
 import '../widgets/custom_header.dart';
+import '../services/places_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HospitalSearchScreen extends StatefulWidget {
   const HospitalSearchScreen({super.key});
@@ -13,71 +16,50 @@ class HospitalSearchScreen extends StatefulWidget {
 }
 
 class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
-  // Mock Data
-  final List<Hospital> _hospitals = [
-    Hospital(
-      name: '서울아산병원',
-      rating: 4.5,
-      reviewCount: 200,
-      distance: 2.5,
-      address: '서울특별시 송파구 올림픽로 43길 88',
-      phoneNumber: '02-3010-0000',
-      tags: ['심장내과', '응급실', '종합병원'],
-      latitude: 0.0,
-      longitude: 0.0,
-      imageAsset: '',
-    ),
-    Hospital(
-      name: '삼성서울병원',
-      rating: 4.8,
-      reviewCount: 350,
-      distance: 5.1,
-      address: '서울특별시 강남구 일원로 81',
-      phoneNumber: '02-3410-2114',
-      tags: ['심장센터', '세계적수준'],
-      latitude: 0.0,
-      longitude: 0.0,
-      imageAsset: '',
-    ),
-    Hospital(
-      name: '세브란스병원',
-      rating: 4.7,
-      reviewCount: 120,
-      distance: 8.3,
-      address: '서울특별시 서대문구 연세로 50',
-      phoneNumber: '1599-1004',
-      tags: ['심장혈관', '대학병원'],
-      latitude: 0.0,
-      longitude: 0.0,
-      imageAsset: '',
-    ),
-    Hospital(
-      name: '서울대학교병원',
-      rating: 4.6,
-      reviewCount: 400,
-      distance: 10.5,
-      address: '서울특별시 종로구 대학로 101',
-      phoneNumber: '1588-5700',
-      tags: ['국립대', '심장수술'],
-      latitude: 0.0,
-      longitude: 0.0,
-      imageAsset: '',
-    ),
-    Hospital(
-      name: '강남세브란스병원',
-      rating: 4.4,
-      reviewCount: 90,
-      distance: 1.2,
-      address: '서울특별시 강남구 언주로 211',
-      phoneNumber: '02-2019-2114',
-      tags: ['강남구', '응급실'],
-      latitude: 0.0,
-      longitude: 0.0,
-      imageAsset: '',
-    ),
-  ];
+  List<Hospital> _hospitals = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+  String _selectedRegion = '현재 위치 주변';
+  final PlacesService _placesService = PlacesService();
 
-  String _selectedRegion = '지역별로 찾기';
+  @override
+  void initState() {
+    super.initState();
+    _fetchNearbyHospitals();
+  }
+
+  Future<void> _fetchNearbyHospitals() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      final fetchedHospitals = await _placesService.fetchNearbyHospitals(
+        LatLng(position.latitude, position.longitude),
+      );
+
+      if (mounted) {
+        setState(() {
+          _hospitals = fetchedHospitals;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = '병원 정보를 불러오는 데 실패했습니다.';
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   // 논의 후 이중 드롭다운으로 변경하면 좋을 것 같아요
   // 시군구 - 동읍면
@@ -186,35 +168,38 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                 ),
               ),
               const Divider(height: 1, thickness: 1),
-              // Hospital List
               Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 16,
-                    bottom:
-                        150, // Add ample padding to avoid Nav Bar and FAB overlap
-                  ),
-                  itemCount: _hospitals.length,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final hospital = _hospitals[index];
-                    return HospitalCard(
-                      hospital: hospital,
-                      onTap: () {
-                        // Navigate to detail
-                      },
-                    );
-                  },
-                ),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _errorMessage != null
+                    ? Center(child: Text(_errorMessage!))
+                    : _hospitals.isEmpty
+                    ? const Center(child: Text('주변에 병원이 없습니다.'))
+                    : ListView.separated(
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          top: 16,
+                          bottom: 80,
+                        ),
+                        itemCount: _hospitals.length,
+                        separatorBuilder: (context, index) => const Divider(),
+                        itemBuilder: (context, index) {
+                          final hospital = _hospitals[index];
+                          return HospitalCard(
+                            hospital: hospital,
+                            onTap: () {
+                              // Navigate to detail
+                            },
+                          );
+                        },
+                      ),
               ),
             ],
           ),
-          // Floating Map Button
           Positioned(
-            bottom: 140, // Position above the CustomBottomNavBar
-            right: 16, // Move to right
+            bottom: 16,
+            right: 16,
             child: FloatingActionButton.extended(
               onPressed: () {
                 context.push('/hospitals');

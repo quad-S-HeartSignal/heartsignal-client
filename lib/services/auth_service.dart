@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 
@@ -53,7 +54,7 @@ class AuthService extends ChangeNotifier {
         throw Exception('Token not found in callback URL');
       }
     } catch (e) {
-      print('Kakao Login Error: $e');
+      debugPrint('Kakao Login Error: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -77,7 +78,7 @@ class AuthService extends ChangeNotifier {
       await _storage.delete(key: 'auth_token');
       _currentUser = null;
     } catch (e) {
-      print('Logout Error: $e');
+      debugPrint('Logout Error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -91,7 +92,7 @@ class AuthService extends ChangeNotifier {
         await _fetchCurrentUser(token);
       }
     } catch (e) {
-      print('Check Login Status Error: $e');
+      debugPrint('Check Login Status Error: $e');
       // If fetch failed (e.g. invalid token), clear token
       await _storage.delete(key: 'auth_token');
       _currentUser = null;
@@ -108,7 +109,9 @@ class AuthService extends ChangeNotifier {
       final jsonResponse = json.decode(response.body);
       if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
         _currentUser = User.fromJson(jsonResponse['data']);
-        print('CurrentUser loaded: ${_currentUser?.isOnboarded}'); // Debug log
+        debugPrint(
+          'CurrentUser loaded: ${_currentUser?.isOnboarded}',
+        ); // Debug log
         notifyListeners();
       } else {
         throw Exception('Failed to parse user data: ${response.body}');
@@ -151,7 +154,7 @@ class AuthService extends ChangeNotifier {
         throw Exception('Failed to complete onboarding: ${response.body}');
       }
     } catch (e) {
-      print('Onboarding Error: $e');
+      debugPrint('Onboarding Error: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -179,7 +182,7 @@ class AuthService extends ChangeNotifier {
       await _storage.delete(key: 'auth_token');
       _currentUser = null;
     } catch (e) {
-      print('Delete Account Error: $e');
+      debugPrint('Delete Account Error: $e');
       rethrow;
     } finally {
       _isLoading = false;

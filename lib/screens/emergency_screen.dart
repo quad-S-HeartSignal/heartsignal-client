@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:math' as math;
 
 class EmergencyScreen extends StatefulWidget {
   const EmergencyScreen({super.key});
@@ -19,7 +18,7 @@ class _EmergencyScreenState extends State<EmergencyScreen>
     super.initState();
     _rippleController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3), // Slower animation
+      duration: const Duration(seconds: 3),
     )..repeat();
   }
 
@@ -69,7 +68,7 @@ class _EmergencyScreenState extends State<EmergencyScreen>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withOpacity(0.5),
+                          color: Colors.red.withAlpha(127), // 0.5 * 255
                           blurRadius: 20,
                           spreadRadius: 5,
                           offset: const Offset(0, 10),
@@ -144,14 +143,14 @@ class _RipplePainter extends CustomPainter {
       final opacity = (1.0 - value).clamp(0.0, 1.0);
 
       final paint = Paint()
-        ..color = color.withOpacity(opacity * 0.6)
+        ..color = color.withAlpha((opacity * 0.6 * 255).toInt())
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2;
 
       canvas.drawCircle(center, radius, paint);
 
       final fillPaint = Paint()
-        ..color = color.withOpacity(opacity * 0.2)
+        ..color = color.withAlpha((opacity * 0.2 * 255).toInt())
         ..style = PaintingStyle.fill;
       canvas.drawCircle(center, radius, fillPaint);
     }

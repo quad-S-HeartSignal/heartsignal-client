@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/hospital_model.dart';
 import '../services/places_service.dart';
 import '../utils/marker_generator.dart';
+import 'package:go_router/go_router.dart';
 
 class HospitalMapScreen extends StatefulWidget {
   const HospitalMapScreen({super.key});
@@ -56,8 +57,10 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
       }
 
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
       );
 
       if (!mounted) return;
@@ -69,7 +72,7 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
 
       _fetchNearbyHospitals();
     } catch (e) {
-      print('Error getting location: \$e');
+      debugPrint('Error getting location: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -113,10 +116,12 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
         _markers.addAll(newMarkers);
       });
     } catch (e) {
-      print('Error fetching hospitals: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to load hospitals')));
+      debugPrint('Error fetching hospitals: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load hospitals')),
+        );
+      }
     }
   }
 
@@ -152,8 +157,8 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: hospital.isOpen
-                          ? Colors.blue.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                          ? Colors.blue.withAlpha(25)
+                          : Colors.red.withAlpha(25),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -187,7 +192,6 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // TODO: Navigation to hospital or call logic
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
@@ -214,24 +218,54 @@ class _HospitalMapScreenState extends State<HospitalMapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nearby Hospitals'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _currentPosition == null
           ? const Center(child: Text('Location permission needed'))
-          : GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: _currentPosition!,
-                zoom: 14.0,
-              ),
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              markers: _markers,
+          : Stack(
+              children: [
+                GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: _currentPosition!,
+                    zoom: 14.0,
+                  ),
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
+                  markers: _markers,
+                ),
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      child: InkWell(
+                        onTap: () {
+                          context.pop();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }
