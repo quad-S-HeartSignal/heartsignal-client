@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final bool isActive;
+
+  const ChatScreen({super.key, this.isActive = true});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -27,9 +29,20 @@ class _ChatScreenState extends State<ChatScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) _animationController.forward();
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted && widget.isActive) _animationController.forward();
     });
+  }
+
+  @override
+  void didUpdateWidget(ChatScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive && !oldWidget.isActive) {
+      if (_showRecommendations && _messages.isEmpty) {
+        _animationController.reset();
+        _animationController.forward();
+      }
+    }
   }
 
   @override

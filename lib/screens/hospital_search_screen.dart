@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/hospital_model.dart';
 import '../widgets/hospital_card.dart';
 import '../widgets/custom_header.dart';
 import '../services/places_service.dart';
+import '../utils/marker_generator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class HospitalSearchScreen extends StatefulWidget {
@@ -22,6 +22,9 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
   String _selectedRegion = '현재 위치 주변';
   final PlacesService _placesService = PlacesService();
 
+  final Set<Marker> _markers = {};
+  LatLng? _currentPosition;
+
   @override
   void initState() {
     super.initState();
@@ -35,19 +38,40 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
     });
 
     try {
-      Position position = await Geolocator.getCurrentPosition(
+      final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
         ),
       );
 
+      _currentPosition = LatLng(position.latitude, position.longitude);
+
       final fetchedHospitals = await _placesService.fetchNearbyHospitals(
-        LatLng(position.latitude, position.longitude),
+        _currentPosition!,
       );
+
+      final BitmapDescriptor customIcon =
+          await MarkerGenerator.createCustomMarkerBitmap();
+
+      final Set<Marker> newMarkers = {};
+      for (final hospital in fetchedHospitals) {
+        newMarkers.add(
+          Marker(
+            markerId: MarkerId(hospital.placeId),
+            position: LatLng(hospital.lat, hospital.lng),
+            icon: customIcon,
+            onTap: () {
+              // Scroll to card or show details
+            },
+          ),
+        );
+      }
 
       if (mounted) {
         setState(() {
           _hospitals = fetchedHospitals;
+          _markers.clear();
+          _markers.addAll(newMarkers);
           _isLoading = false;
         });
       }
@@ -115,108 +139,190 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const CustomHeader(showBackButton: false),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              // Top Filter Bar
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                color: Colors.white,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${_hospitals.length}개',
-                      style: GoogleFonts.notoSans(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                // 1. Background Map
+                if (_currentPosition != null)
+                  Positioned.fill(
+                    child: Padding(
+                      // Leave top space for header padding visually
+                      padding: const EdgeInsets.only(top: 100),
+                      child: GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: _currentPosition!,
+                          zoom: 14.0,
+                        ),
+                        myLocationEnabled: true,
+                        myLocationButtonEnabled: false,
+                        zoomControlsEnabled: false,
+                        markers: _markers,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: _showRegionFilter,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              _selectedRegion,
-                              style: GoogleFonts.notoSans(
-                                fontSize: 12,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.arrow_drop_down, size: 16),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                  )
+                else
+                  const Center(child: Text('Location permission needed')),
+
+                // 2. Custom Header at the top
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: CustomHeader(showBackButton: false),
                 ),
-              ),
-              const Divider(height: 1, thickness: 1),
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _errorMessage != null
-                    ? Center(child: Text(_errorMessage!))
-                    : _hospitals.isEmpty
-                    ? const Center(child: Text('주변에 병원이 없습니다.'))
-                    : ListView.separated(
-                        padding: const EdgeInsets.only(
-                          left: 16,
-                          right: 16,
-                          top: 16,
-                          bottom: 80,
+
+                // 3. Draggable Scrollable Sheet for Hospitals List
+                DraggableScrollableSheet(
+                  initialChildSize: 0.5,
+                  minChildSize: 0.2,
+                  maxChildSize: 0.85,
+                  builder: (context, scrollController) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(24),
                         ),
-                        itemCount: _hospitals.length,
-                        separatorBuilder: (context, index) => const Divider(),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(25),
+                            blurRadius: 10,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: ListView.builder(
+                        controller: scrollController,
+                        padding: EdgeInsets.zero,
+                        itemCount: _hospitals.isEmpty && _errorMessage == null
+                            ? 2
+                            : _hospitals.length + 1,
                         itemBuilder: (context, index) {
-                          final hospital = _hospitals[index];
-                          return HospitalCard(
-                            hospital: hospital,
-                            onTap: () {
-                              // Navigate to detail
-                            },
+                          if (index == 0) {
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Drag Handle
+                                Center(
+                                  child: Container(
+                                    margin: const EdgeInsets.only(
+                                      top: 12,
+                                      bottom: 8,
+                                    ),
+                                    width: 40,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ),
+                                // Top Filter Bar
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '${_hospitals.length}개',
+                                        style: GoogleFonts.notoSans(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: _showRegionFilter,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: Colors.grey[300]!,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            color: Colors.white,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(
+                                                Icons.location_on_outlined,
+                                                size: 16,
+                                                color: Colors.black54,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                _selectedRegion,
+                                                style: GoogleFonts.notoSans(
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              const Icon(
+                                                Icons.arrow_drop_down,
+                                                size: 20,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          if (_errorMessage != null) {
+                            return Container(
+                              height: 300,
+                              alignment: Alignment.center,
+                              child: Text(_errorMessage!),
+                            );
+                          }
+
+                          if (_hospitals.isEmpty) {
+                            return Container(
+                              height: 300,
+                              alignment: Alignment.center,
+                              child: const Text('주변에 병원이 없습니다.'),
+                            );
+                          }
+
+                          final hospitalIndex = index - 1;
+                          final hospital = _hospitals[hospitalIndex];
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              children: [
+                                if (hospitalIndex > 0) const Divider(),
+                                HospitalCard(hospital: hospital, onTap: () {}),
+                                if (hospitalIndex == _hospitals.length - 1)
+                                  const SizedBox(
+                                    height: 120,
+                                  ), // Bottom navigation bar space
+                              ],
+                            ),
                           );
                         },
                       ),
-              ),
-            ],
-          ),
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton.extended(
-              onPressed: () {
-                context.push('/hospitals');
-              },
-              backgroundColor: const Color(0xFF222222),
-              icon: const Icon(Icons.map, color: Colors.white),
-              label: Text(
-                '지도에서 보기',
-                style: GoogleFonts.notoSans(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                    );
+                  },
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

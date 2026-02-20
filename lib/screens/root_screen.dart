@@ -15,19 +15,20 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const ChatScreen(),
-    const HospitalSearchScreen(),
-    const Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(child: ProfileScreen()),
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          ChatScreen(isActive: _currentIndex == 0),
+          const HospitalSearchScreen(),
+          const Scaffold(
+            backgroundColor: Colors.white,
+            body: SafeArea(child: ProfileScreen()),
+          ),
+        ],
+      ),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _currentIndex,
         onTap: (index) {
