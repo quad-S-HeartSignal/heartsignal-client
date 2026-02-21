@@ -19,12 +19,14 @@ class _ChatScreenState extends State<ChatScreen>
   final TextEditingController _textController = TextEditingController();
   final List<String> _messages = [];
   bool _showRecommendations = true;
+  bool _isTyping = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
+    _textController.addListener(_onTextChanged);
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -45,8 +47,15 @@ class _ChatScreenState extends State<ChatScreen>
     }
   }
 
+  void _onTextChanged() {
+    setState(() {
+      _isTyping = _textController.text.isNotEmpty;
+    });
+  }
+
   @override
   void dispose() {
+    _textController.removeListener(_onTextChanged);
     _animationController.dispose();
     _textController.dispose();
     super.dispose();
@@ -73,7 +82,6 @@ class _ChatScreenState extends State<ChatScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.white,
       appBar: CustomHeader(
         showBackButton: false,
         leadingIcon: IconButton(
@@ -131,8 +139,8 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Widget _buildAnimatedButton(String text, int index) {
-    final double start = index * 0.2;
-    final double end = start + 0.6;
+    final double start = (index * 0.4).clamp(0.0, 1.0);
+    final double end = (start + 0.6).clamp(0.0, 1.0);
 
     final Animation<double> fadeAnimation = Tween<double>(begin: 0.0, end: 1.0)
         .animate(
@@ -160,17 +168,19 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Widget _buildRecommendationButton(String text) {
-    return OutlinedButton(
+    return ElevatedButton(
       onPressed: () => _handleSubmitted(text),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFD64545),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: const BorderSide(color: Colors.grey),
+        elevation: 0,
         alignment: Alignment.centerLeft,
       ),
       child: Text(
         text,
-        style: GoogleFonts.notoSans(color: Colors.black, fontSize: 16),
+        style: GoogleFonts.notoSans(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -194,9 +204,14 @@ class _ChatScreenState extends State<ChatScreen>
           child: Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(16),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFA7B7B),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(4),
+              ),
             ),
             child: Text(
               _messages[index],
@@ -212,7 +227,7 @@ class _ChatScreenState extends State<ChatScreen>
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFE0E0E0),
+        color: const Color(0xFFFDE8E8),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -237,14 +252,33 @@ class _ChatScreenState extends State<ChatScreen>
               onSubmitted: _handleSubmitted,
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.mic, color: Colors.black),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.send, color: Colors.black),
-            onPressed: () => _handleSubmitted(_textController.text),
-          ),
+          if (!_isTyping)
+            IconButton(
+              icon: const Icon(Icons.mic, color: Colors.black),
+              onPressed: () {},
+            ),
+          if (_isTyping)
+            GestureDetector(
+              onTap: () => _handleSubmitted(_textController.text),
+              child: Container(
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_upward,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.send, color: Colors.black),
+              onPressed: () => _handleSubmitted(_textController.text),
+            ),
         ],
       ),
     );
