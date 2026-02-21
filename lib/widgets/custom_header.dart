@@ -20,7 +20,7 @@ class CustomHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFF5F5),
       scrolledUnderElevation: 0, // Disable color change on scroll
       elevation: 0,
       centerTitle: true,
