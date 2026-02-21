@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import '../models/hospital_model.dart';
 import '../widgets/hospital_card.dart';
 import '../widgets/custom_header.dart';
+import '../widgets/hospital_detail_view.dart';
 import '../services/places_service.dart';
 import '../utils/marker_generator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -24,6 +25,7 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
 
   final Set<Marker> _markers = {};
   LatLng? _currentPosition;
+  Hospital? _selectedHospital;
 
   @override
   void initState() {
@@ -137,6 +139,19 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedHospital != null) {
+      return HospitalDetailView(
+        hospital: _selectedHospital!,
+        totalCount: _hospitals.length,
+        selectedRegion: _selectedRegion,
+        onClose: () {
+          setState(() {
+            _selectedHospital = null;
+          });
+        },
+      );
+    }
+
     return Scaffold(
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -307,7 +322,14 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                             child: Column(
                               children: [
                                 if (hospitalIndex > 0) const Divider(),
-                                HospitalCard(hospital: hospital, onTap: () {}),
+                                HospitalCard(
+                                  hospital: hospital,
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedHospital = hospital;
+                                    });
+                                  },
+                                ),
                                 if (hospitalIndex == _hospitals.length - 1)
                                   const SizedBox(
                                     height: 120,
