@@ -5,6 +5,9 @@ class Hospital {
   final double lat;
   final double lng;
   final bool isOpen;
+  final double? rating;
+  final int userRatingCount;
+  final String phoneNumber;
 
   Hospital({
     required this.placeId,
@@ -13,6 +16,9 @@ class Hospital {
     required this.lat,
     required this.lng,
     this.isOpen = false,
+    this.rating,
+    this.userRatingCount = 0,
+    this.phoneNumber = '',
   });
 
   factory Hospital.fromJson(Map<String, dynamic> json) {
@@ -24,6 +30,9 @@ class Hospital {
       lat: (location['lat'] as num?)?.toDouble() ?? 0.0,
       lng: (location['lng'] as num?)?.toDouble() ?? 0.0,
       isOpen: json['isOpen'] as bool? ?? false,
+      rating: (json['rating'] as num?)?.toDouble(),
+      userRatingCount: (json['userRatingCount'] as num?)?.toInt() ?? 0,
+      phoneNumber: json['phoneNumber'] ?? '',
     );
   }
 }

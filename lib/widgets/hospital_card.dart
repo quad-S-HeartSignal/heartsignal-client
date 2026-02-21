@@ -10,10 +10,12 @@ class HospitalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const String distanceText = '2.5 km';
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        padding: const EdgeInsets.symmetric(vertical: 24.0),
         color: Colors.white,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -23,19 +25,21 @@ class HospitalCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Icon(
                         Icons.location_on,
-                        size: 16,
-                        color: Colors.black,
+                        size: 24,
+                        color: Color(0xFFFF5252), // Red Marker
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           hospital.name,
                           style: GoogleFonts.notoSans(
-                            fontSize: 16,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: Colors.black87,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -43,56 +47,143 @@ class HospitalCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    hospital.address,
-                    style: GoogleFonts.notoSans(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      _buildTag('심장 검사 가능'),
+                      const SizedBox(width: 4),
+                      _buildTag('응급 진료 가능'),
+                    ],
                   ),
                   const SizedBox(height: 8),
+
+                  // 2. Rating Row
+                  Row(
+                    children: [
+                      _buildStarRating(hospital.rating ?? 0.0),
+                      const SizedBox(width: 4),
+                      Text(
+                        '(${hospital.userRatingCount})',
+                        style: GoogleFonts.notoSans(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 3. Distance Pill
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: 10,
+                      vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: hospital.isOpen
-                          ? Colors.blue.withAlpha(25)
-                          : Colors.red.withAlpha(25),
-                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: const Color(0xFFFF5252)),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      hospital.isOpen ? '영업중' : '영업종료',
+                      distanceText,
                       style: GoogleFonts.notoSans(
                         fontSize: 12,
-                        color: hospital.isOpen ? Colors.blue : Colors.red,
-                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFFF5252),
                       ),
                     ),
                   ),
+                  const SizedBox(height: 8),
+
+                  // 4. Address
+                  Text(
+                    hospital.address,
+                    style: GoogleFonts.notoSans(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+
+                  // 5. Phone Number
+                  if (hospital.phoneNumber.isNotEmpty)
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.phone,
+                          size: 16,
+                          color: Color(0xFFFF5252),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          hospital.phoneNumber,
+                          style: GoogleFonts.notoSans(
+                            fontSize: 14,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
             const SizedBox(width: 16),
             Container(
-              width: 80,
-              height: 80,
+              width: 90,
+              height: 90,
               decoration: BoxDecoration(
                 color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black, width: 1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[400]!, width: 2),
               ),
               child: const Center(
-                child: Icon(Icons.image, size: 40, color: Colors.black54),
+                child: Icon(Icons.image, size: 40, color: Colors.black26),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFEAEA), // Light pinkish
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFF5252).withAlpha(100)),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.notoSans(
+          fontSize: 10,
+          color: const Color(0xFFFF5252),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStarRating(double rating) {
+    int fullStars = rating.floor();
+    bool hasHalfStar = (rating - fullStars) >= 0.5;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        if (index < fullStars) {
+          return const Icon(Icons.star, size: 16, color: Color(0xFFFF5252));
+        } else if (index == fullStars && hasHalfStar) {
+          return const Icon(
+            Icons.star_half,
+            size: 16,
+            color: Color(0xFFFF5252),
+          );
+        } else {
+          return Icon(Icons.star_border, size: 16, color: Colors.grey[400]);
+        }
+      }),
     );
   }
 }
