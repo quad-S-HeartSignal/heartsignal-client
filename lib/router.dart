@@ -8,7 +8,6 @@ import 'screens/onboarding_step1_screen.dart';
 import 'screens/onboarding_step2_screen.dart';
 import 'screens/root_screen.dart';
 import 'screens/emergency_screen.dart';
-import 'screens/hospital_map_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -32,10 +31,7 @@ final router = GoRouter(
       path: '/emergency',
       builder: (context, state) => const EmergencyScreen(),
     ),
-    GoRoute(
-      path: '/hospitals',
-      builder: (context, state) => const HospitalMapScreen(),
-    ),
+
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const OnboardingStep1Screen(),
