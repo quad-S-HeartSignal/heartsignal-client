@@ -21,85 +21,84 @@ class _SignupStep2BirthdateScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: const CustomHeader(), // Changed this line
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 20),
-              Text(
-                'HeartSignal',
-                style: GoogleFonts.notoSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                '마지막으로',
-                style: GoogleFonts.notoSans(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'OO님의 생년월일을 부탁드립니다',
-                style: GoogleFonts.notoSans(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 40),
-              CustomTextField(
-                label: '생년월일',
-                hintText: 'YYYY.MM.DD',
-                controller: _controller,
-                keyboardType: TextInputType.datetime,
-              ),
-              const Spacer(),
-              // Placeholder for the 3D Robot Image
-              Center(
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50], // Light blue placeholder
-                    shape: BoxShape.circle,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFF5F5), Color(0xFFFFE0E0), Color(0xFFFFC6C6)],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 20),
+                const SizedBox(height: 24),
+                Text(
+                  '마지막으로',
+                  style: GoogleFonts.notoSans(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                    height: 1.4,
                   ),
-                  child: const Icon(
-                    Icons.calendar_today,
-                    size: 80,
-                    color: Colors.blue,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'OO님의 생년월일을 부탁드립니다',
+                  style: GoogleFonts.notoSans(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+                CustomTextField(
+                  label: '생년월일',
+                  hintText: 'YYYY.MM.DD',
+                  controller: _controller,
+                  keyboardType: TextInputType.datetime,
+                ),
+                const Spacer(),
+                // Placeholder for the 3D Robot Image
+                Center(
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50], // Light blue placeholder
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.calendar_today,
+                      size: 80,
+                      color: Colors.blue,
+                    ),
                   ),
                 ),
-              ),
-              const Spacer(),
-              const StepIndicator(
-                totalSteps: 4,
-                currentStep: 3,
-                activeColor: Colors.black,
-                inactiveColor: Color(0xFFE0E0E0),
-              ),
-              const SizedBox(height: 40),
-              CustomButton(
-                text: '다음',
-                backgroundColor: Colors.grey[800]!,
-                onPressed: () {
-                  context.push('/completion');
-                },
-              ),
-              const SizedBox(height: 40),
-            ],
+                const Spacer(),
+                const StepIndicator(
+                  totalSteps: 5,
+                  currentStep: 3,
+                  activeColor: Color(0xFFD32F2F),
+                  inactiveColor: Colors.white54,
+                ),
+                const SizedBox(height: 40),
+                CustomButton(
+                  text: '다음',
+                  backgroundColor: Colors.grey[800]!,
+                  onPressed: () {
+                    context.push('/completion');
+                  },
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
