@@ -17,10 +17,7 @@ class CompletionScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFF0F0), // Light pink top
-              Color(0xFFFFC0C0), // Darker pink bottom
-            ],
+            colors: [Color(0xFFFFF5F5), Color(0xFFFFE0E0), Color(0xFFFFC6C6)],
           ),
         ),
         child: SafeArea(
@@ -47,7 +44,6 @@ class CompletionScreen extends StatelessWidget {
                   ],
                 ),
                 const Spacer(flex: 2),
-                // Character Placeholder
                 Center(
                   child: Container(
                     width: 200,
@@ -97,16 +93,16 @@ class CompletionScreen extends StatelessWidget {
                 const Spacer(flex: 3),
                 // Step Indicator
                 const StepIndicator(
-                  totalSteps: 4,
+                  totalSteps: 5,
                   currentStep: 4,
-                  activeColor: Color(0xFFD32F2F), // Darker red for active
-                  inactiveColor: Colors.white,
+                  activeColor: Color(0xFFD32F2F),
+                  inactiveColor: Colors.white54,
                 ),
                 const SizedBox(height: 40),
                 // Enter Button
                 CustomButton(
                   text: '들어가기',
-                  backgroundColor: const Color(0xFFD32F2F), // Red color
+                  backgroundColor: const Color(0xFFD32F2F),
                   textColor: Colors.white,
                   onPressed: () {
                     context.go('/chat');
