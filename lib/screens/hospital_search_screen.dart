@@ -29,6 +29,7 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
   GoogleMapController? _mapController;
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
 
   @override
   void initState() {
@@ -40,6 +41,9 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _listKey.currentState?.removeAllItems(
+        (context, animation) => const SizedBox(),
+      );
     });
 
     try {
@@ -84,10 +88,27 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
             icon: customIcon,
             onTap: () {
               if (mounted) {
-                setState(() {
-                  _hospitals.remove(hospital);
-                  _hospitals.insert(0, hospital);
-                });
+                final index = _hospitals.indexOf(hospital);
+                if (index > 0) {
+                  final listIndex = index + 1;
+                  final removedHospital = _hospitals.removeAt(index);
+                  _listKey.currentState?.removeItem(
+                    listIndex,
+                    (context, animation) => _buildHospitalItem(
+                      context,
+                      removedHospital,
+                      animation,
+                      isRemoving: true,
+                    ),
+                    duration: const Duration(milliseconds: 300),
+                  );
+
+                  _hospitals.insert(0, removedHospital);
+                  _listKey.currentState?.insertItem(
+                    1,
+                    duration: const Duration(milliseconds: 400),
+                  );
+                }
 
                 if (_sheetController.isAttached) {
                   _sheetController.animateTo(
@@ -177,6 +198,40 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
     );
   }
 
+  Widget _buildHospitalItem(
+    BuildContext context,
+    Hospital hospital,
+    Animation<double> animation, {
+    bool isRemoving = false,
+  }) {
+    return SizeTransition(
+      sizeFactor: animation,
+      child: FadeTransition(
+        opacity: animation,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              if (!isRemoving && _hospitals.indexOf(hospital) > 0)
+                const Divider(),
+              HospitalCard(
+                hospital: hospital,
+                userLocation: _currentPosition,
+                onTap: () {
+                  setState(() {
+                    _selectedHospital = hospital;
+                  });
+                },
+              ),
+              if (_hospitals.isNotEmpty && _hospitals.last == hospital)
+                const SizedBox(height: 120), 
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_selectedHospital != null) {
@@ -247,13 +302,15 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                           ),
                         ],
                       ),
-                      child: ListView.builder(
+                      child: AnimatedList(
+                        key: _listKey,
                         controller: scrollController,
                         padding: EdgeInsets.zero,
-                        itemCount: _hospitals.isEmpty && _errorMessage == null
+                        initialItemCount:
+                            _hospitals.isEmpty && _errorMessage == null
                             ? 2
                             : _hospitals.length + 1,
-                        itemBuilder: (context, index) {
+                        itemBuilder: (context, index, animation) {
                           if (index == 0) {
                             return Column(
                               mainAxisSize: MainAxisSize.min,
@@ -356,26 +413,10 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                           final hospitalIndex = index - 1;
                           final hospital = _hospitals[hospitalIndex];
 
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              children: [
-                                if (hospitalIndex > 0) const Divider(),
-                                HospitalCard(
-                                  hospital: hospital,
-                                  userLocation: _currentPosition,
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedHospital = hospital;
-                                    });
-                                  },
-                                ),
-                                if (hospitalIndex == _hospitals.length - 1)
-                                  const SizedBox(
-                                    height: 120,
-                                  ), // Bottom navigation bar space
-                              ],
-                            ),
+                          return _buildHospitalItem(
+                            context,
+                            hospital,
+                            animation,
                           );
                         },
                       ),
