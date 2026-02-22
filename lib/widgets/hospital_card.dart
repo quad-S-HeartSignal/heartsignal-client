@@ -1,16 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import '../models/hospital_model.dart';
 
 class HospitalCard extends StatelessWidget {
   final Hospital hospital;
   final VoidCallback onTap;
+  final LatLng? userLocation;
 
-  const HospitalCard({super.key, required this.hospital, required this.onTap});
+  const HospitalCard({
+    super.key,
+    required this.hospital,
+    required this.onTap,
+    this.userLocation,
+  });
 
   @override
   Widget build(BuildContext context) {
-    const String distanceText = '2.5 km';
+    String distanceText = '? km';
+    if (userLocation != null) {
+      double distanceInMeters = Geolocator.distanceBetween(
+        userLocation!.latitude,
+        userLocation!.longitude,
+        hospital.lat,
+        hospital.lng,
+      );
+      double distanceInKm = distanceInMeters / 1000;
+      distanceText = '${distanceInKm.toStringAsFixed(1)} km';
+    }
 
     return GestureDetector(
       onTap: onTap,
@@ -30,7 +48,7 @@ class HospitalCard extends StatelessWidget {
                       const Icon(
                         Icons.location_on,
                         size: 24,
-                        color: Color(0xFFFF5252), // Red Marker
+                        color: Color(0xFFFF5252),
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -73,7 +91,6 @@ class HospitalCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
 
-                  // 3. Distance Pill
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -93,7 +110,6 @@ class HospitalCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
 
-                  // 4. Address
                   Text(
                     hospital.address,
                     style: GoogleFonts.notoSans(
@@ -105,7 +121,6 @@ class HospitalCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
 
-                  // 5. Phone Number
                   if (hospital.phoneNumber.isNotEmpty)
                     Row(
                       children: [
@@ -131,14 +146,31 @@ class HospitalCard extends StatelessWidget {
             Container(
               width: 90,
               height: 90,
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: Colors.grey[300],
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey[400]!, width: 2),
               ),
-              child: const Center(
-                child: Icon(Icons.image, size: 40, color: Colors.black26),
-              ),
+              child:
+                  (hospital.photoUrl != null && hospital.photoUrl!.isNotEmpty)
+                  ? Image.network(
+                      hospital.photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback if image fails to load
+                        return const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 40,
+                            color: Colors.black26,
+                          ),
+                        );
+                      },
+                    )
+                  : const Center(
+                      child: Icon(Icons.image, size: 40, color: Colors.black26),
+                    ),
             ),
           ],
         ),
@@ -150,7 +182,7 @@ class HospitalCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFEAEA), // Light pinkish
+        color: const Color(0xFFFFEAEA),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFFF5252).withAlpha(100)),
       ),

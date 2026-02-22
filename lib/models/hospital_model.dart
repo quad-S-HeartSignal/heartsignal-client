@@ -8,6 +8,7 @@ class Hospital {
   final double? rating;
   final int userRatingCount;
   final String phoneNumber;
+  final String? photoUrl;
 
   Hospital({
     required this.placeId,
@@ -19,6 +20,7 @@ class Hospital {
     this.rating,
     this.userRatingCount = 0,
     this.phoneNumber = '',
+    this.photoUrl,
   });
 
   factory Hospital.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,7 @@ class Hospital {
       rating: (json['rating'] as num?)?.toDouble(),
       userRatingCount: (json['userRatingCount'] as num?)?.toInt() ?? 0,
       phoneNumber: json['phoneNumber'] ?? '',
+      photoUrl: json['photoUrl'],
     );
   }
 }

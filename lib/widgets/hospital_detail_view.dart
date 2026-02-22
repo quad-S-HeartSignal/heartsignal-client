@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import '../models/hospital_model.dart';
 import 'custom_header.dart'; // Already exists
 
@@ -8,6 +10,7 @@ class HospitalDetailView extends StatelessWidget {
   final VoidCallback onClose;
   final int totalCount;
   final String selectedRegion;
+  final LatLng? userLocation;
 
   const HospitalDetailView({
     super.key,
@@ -15,10 +18,23 @@ class HospitalDetailView extends StatelessWidget {
     required this.onClose,
     required this.totalCount,
     required this.selectedRegion,
+    this.userLocation,
   });
 
   @override
   Widget build(BuildContext context) {
+    String distanceText = '? km';
+    if (userLocation != null) {
+      double distanceInMeters = Geolocator.distanceBetween(
+        userLocation!.latitude,
+        userLocation!.longitude,
+        hospital.lat,
+        hospital.lng,
+      );
+      double distanceInKm = distanceInMeters / 1000;
+      distanceText = '${distanceInKm.toStringAsFixed(1)} km';
+    }
+
     return Container(
       color: const Color(0xFFFFF5F5),
       child: Stack(
@@ -38,18 +54,38 @@ class HospitalDetailView extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     height: 200,
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.grey[400]!, width: 2),
                     ),
-                    child: const Center(
-                      child: Icon(Icons.image, size: 80, color: Colors.black26),
-                    ),
+                    child:
+                        (hospital.photoUrl != null &&
+                            hospital.photoUrl!.isNotEmpty)
+                        ? Image.network(
+                            hospital.photoUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 80,
+                                  color: Colors.black26,
+                                ),
+                              );
+                            },
+                          )
+                        : const Center(
+                            child: Icon(
+                              Icons.image,
+                              size: 80,
+                              color: Colors.black26,
+                            ),
+                          ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Hospital Info Row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -115,7 +151,7 @@ class HospitalDetailView extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Text(
-                                '2.5 km',
+                                distanceText,
                                 style: GoogleFonts.notoSans(
                                   fontSize: 12,
                                   color: const Color(0xFFFF5252),
@@ -158,6 +194,7 @@ class HospitalDetailView extends StatelessWidget {
                         width: 80,
                         height: 80,
                         margin: const EdgeInsets.only(top: 16),
+                        clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(12),
@@ -166,19 +203,34 @@ class HospitalDetailView extends StatelessWidget {
                             width: 2,
                           ),
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.image,
-                            size: 36,
-                            color: Colors.black26,
-                          ),
-                        ),
+                        child:
+                            (hospital.photoUrl != null &&
+                                hospital.photoUrl!.isNotEmpty)
+                            ? Image.network(
+                                hospital.photoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      size: 36,
+                                      color: Colors.black26,
+                                    ),
+                                  );
+                                },
+                              )
+                            : const Center(
+                                child: Icon(
+                                  Icons.image,
+                                  size: 36,
+                                  color: Colors.black26,
+                                ),
+                              ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 40),
 
-                  // Buttons
                   Center(
                     child: Column(
                       children: [
@@ -238,7 +290,6 @@ class HospitalDetailView extends StatelessWidget {
               ),
             ),
           ),
-          // Custom Header
           const Positioned(
             top: 0,
             left: 0,
