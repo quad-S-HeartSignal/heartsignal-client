@@ -26,6 +26,10 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
   final Set<Marker> _markers = {};
   LatLng? _currentPosition;
   Hospital? _selectedHospital;
+  GoogleMapController? _mapController;
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
 
   @override
   void initState() {
@@ -37,6 +41,9 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _listKey.currentState?.removeAllItems(
+        (context, animation) => const SizedBox(),
+      );
     });
 
     try {
@@ -80,7 +87,44 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
             position: LatLng(hospital.lat, hospital.lng),
             icon: customIcon,
             onTap: () {
-              // Scroll to card or show details
+              if (mounted) {
+                final index = _hospitals.indexOf(hospital);
+                if (index > 0) {
+                  final listIndex = index + 1;
+                  final removedHospital = _hospitals.removeAt(index);
+                  _listKey.currentState?.removeItem(
+                    listIndex,
+                    (context, animation) => _buildHospitalItem(
+                      context,
+                      removedHospital,
+                      animation,
+                      isRemoving: true,
+                    ),
+                    duration: const Duration(milliseconds: 300),
+                  );
+
+                  _hospitals.insert(0, removedHospital);
+                  _listKey.currentState?.insertItem(
+                    1,
+                    duration: const Duration(milliseconds: 400),
+                  );
+                }
+
+                if (_sheetController.isAttached) {
+                  _sheetController.animateTo(
+                    0.5,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+
+                if (_mapController != null) {
+                  final offsetLat = hospital.lat - 0.005;
+                  _mapController!.animateCamera(
+                    CameraUpdate.newLatLng(LatLng(offsetLat, hospital.lng)),
+                  );
+                }
+              }
             },
           ),
         );
@@ -154,6 +198,40 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
     );
   }
 
+  Widget _buildHospitalItem(
+    BuildContext context,
+    Hospital hospital,
+    Animation<double> animation, {
+    bool isRemoving = false,
+  }) {
+    return SizeTransition(
+      sizeFactor: animation,
+      child: FadeTransition(
+        opacity: animation,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              if (!isRemoving && _hospitals.indexOf(hospital) > 0)
+                const Divider(),
+              HospitalCard(
+                hospital: hospital,
+                userLocation: _currentPosition,
+                onTap: () {
+                  setState(() {
+                    _selectedHospital = hospital;
+                  });
+                },
+              ),
+              if (_hospitals.isNotEmpty && _hospitals.last == hospital)
+                const SizedBox(height: 120), 
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_selectedHospital != null) {
@@ -175,17 +253,18 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
-                // 1. Background Map
                 if (_currentPosition != null)
                   Positioned.fill(
                     child: Padding(
-                      // Leave top space for header padding visually
                       padding: const EdgeInsets.only(top: 100),
                       child: GoogleMap(
                         initialCameraPosition: CameraPosition(
                           target: _currentPosition!,
                           zoom: 14.0,
                         ),
+                        onMapCreated: (controller) {
+                          _mapController = controller;
+                        },
                         myLocationEnabled: true,
                         myLocationButtonEnabled: false,
                         zoomControlsEnabled: false,
@@ -196,7 +275,6 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                 else
                   const Center(child: Text('Location permission needed')),
 
-                // 2. Custom Header at the top
                 const Positioned(
                   top: 0,
                   left: 0,
@@ -204,8 +282,8 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                   child: CustomHeader(showBackButton: false),
                 ),
 
-                // 3. Draggable Scrollable Sheet for Hospitals List
                 DraggableScrollableSheet(
+                  controller: _sheetController,
                   initialChildSize: 0.5,
                   minChildSize: 0.2,
                   maxChildSize: 0.85,
@@ -224,18 +302,19 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                           ),
                         ],
                       ),
-                      child: ListView.builder(
+                      child: AnimatedList(
+                        key: _listKey,
                         controller: scrollController,
                         padding: EdgeInsets.zero,
-                        itemCount: _hospitals.isEmpty && _errorMessage == null
+                        initialItemCount:
+                            _hospitals.isEmpty && _errorMessage == null
                             ? 2
                             : _hospitals.length + 1,
-                        itemBuilder: (context, index) {
+                        itemBuilder: (context, index, animation) {
                           if (index == 0) {
                             return Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // Drag Handle
                                 Center(
                                   child: Container(
                                     margin: const EdgeInsets.only(
@@ -250,7 +329,6 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                                     ),
                                   ),
                                 ),
-                                // Top Filter Bar
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
@@ -335,26 +413,10 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                           final hospitalIndex = index - 1;
                           final hospital = _hospitals[hospitalIndex];
 
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              children: [
-                                if (hospitalIndex > 0) const Divider(),
-                                HospitalCard(
-                                  hospital: hospital,
-                                  userLocation: _currentPosition,
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedHospital = hospital;
-                                    });
-                                  },
-                                ),
-                                if (hospitalIndex == _hospitals.length - 1)
-                                  const SizedBox(
-                                    height: 120,
-                                  ), // Bottom navigation bar space
-                              ],
-                            ),
+                          return _buildHospitalItem(
+                            context,
+                            hospital,
+                            animation,
                           );
                         },
                       ),
