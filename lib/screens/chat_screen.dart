@@ -171,7 +171,7 @@ class _ChatScreenState extends State<ChatScreen>
     return ElevatedButton(
       onPressed: () => _handleSubmitted(text),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFD64545),
+        backgroundColor: const Color(0xFFEF5350),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

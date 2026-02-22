@@ -52,6 +52,23 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
         _currentPosition!,
       );
 
+      // 프론트단에서 거리순 정렬(임시)
+      fetchedHospitals.sort((a, b) {
+        final distA = Geolocator.distanceBetween(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          a.lat,
+          a.lng,
+        );
+        final distB = Geolocator.distanceBetween(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          b.lat,
+          b.lng,
+        );
+        return distA.compareTo(distB);
+      });
+
       final BitmapDescriptor customIcon =
           await MarkerGenerator.createCustomMarkerBitmap();
 
@@ -144,6 +161,7 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
         hospital: _selectedHospital!,
         totalCount: _hospitals.length,
         selectedRegion: _selectedRegion,
+        userLocation: _currentPosition,
         onClose: () {
           setState(() {
             _selectedHospital = null;
@@ -324,6 +342,7 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                                 if (hospitalIndex > 0) const Divider(),
                                 HospitalCard(
                                   hospital: hospital,
+                                  userLocation: _currentPosition,
                                   onTap: () {
                                     setState(() {
                                       _selectedHospital = hospital;
