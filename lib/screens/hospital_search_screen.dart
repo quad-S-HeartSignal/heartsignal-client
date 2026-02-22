@@ -26,6 +26,9 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
   final Set<Marker> _markers = {};
   LatLng? _currentPosition;
   Hospital? _selectedHospital;
+  GoogleMapController? _mapController;
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
 
   @override
   void initState() {
@@ -80,7 +83,27 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
             position: LatLng(hospital.lat, hospital.lng),
             icon: customIcon,
             onTap: () {
-              // Scroll to card or show details
+              if (mounted) {
+                setState(() {
+                  _hospitals.remove(hospital);
+                  _hospitals.insert(0, hospital);
+                });
+
+                if (_sheetController.isAttached) {
+                  _sheetController.animateTo(
+                    0.5,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+
+                if (_mapController != null) {
+                  final offsetLat = hospital.lat - 0.005;
+                  _mapController!.animateCamera(
+                    CameraUpdate.newLatLng(LatLng(offsetLat, hospital.lng)),
+                  );
+                }
+              }
             },
           ),
         );
@@ -175,17 +198,18 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
-                // 1. Background Map
                 if (_currentPosition != null)
                   Positioned.fill(
                     child: Padding(
-                      // Leave top space for header padding visually
                       padding: const EdgeInsets.only(top: 100),
                       child: GoogleMap(
                         initialCameraPosition: CameraPosition(
                           target: _currentPosition!,
                           zoom: 14.0,
                         ),
+                        onMapCreated: (controller) {
+                          _mapController = controller;
+                        },
                         myLocationEnabled: true,
                         myLocationButtonEnabled: false,
                         zoomControlsEnabled: false,
@@ -196,7 +220,6 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                 else
                   const Center(child: Text('Location permission needed')),
 
-                // 2. Custom Header at the top
                 const Positioned(
                   top: 0,
                   left: 0,
@@ -204,8 +227,8 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                   child: CustomHeader(showBackButton: false),
                 ),
 
-                // 3. Draggable Scrollable Sheet for Hospitals List
                 DraggableScrollableSheet(
+                  controller: _sheetController,
                   initialChildSize: 0.5,
                   minChildSize: 0.2,
                   maxChildSize: 0.85,
@@ -235,7 +258,6 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                             return Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // Drag Handle
                                 Center(
                                   child: Container(
                                     margin: const EdgeInsets.only(
@@ -250,7 +272,6 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                                     ),
                                   ),
                                 ),
-                                // Top Filter Bar
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
