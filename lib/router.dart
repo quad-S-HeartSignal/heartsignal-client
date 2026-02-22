@@ -8,6 +8,7 @@ import 'screens/onboarding_step1_screen.dart';
 import 'screens/onboarding_step2_screen.dart';
 import 'screens/root_screen.dart';
 import 'screens/emergency_screen.dart';
+import 'screens/edit_profile_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/',
@@ -30,6 +31,10 @@ final router = GoRouter(
     GoRoute(
       path: '/emergency',
       builder: (context, state) => const EmergencyScreen(),
+    ),
+    GoRoute(
+      path: '/edit-profile',
+      builder: (context, state) => const EditProfileScreen(),
     ),
 
     GoRoute(

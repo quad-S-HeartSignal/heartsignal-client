@@ -25,7 +25,7 @@ class _RootScreenState extends State<RootScreen> {
         children: [
           ChatScreen(isActive: _currentIndex == 0),
           const HospitalSearchScreen(),
-          const Scaffold(body: SafeArea(child: ProfileScreen())),
+          const ProfileScreen(),
         ],
       ),
       bottomNavigationBar: CustomBottomNavBar(

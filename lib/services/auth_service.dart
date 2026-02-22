@@ -162,6 +162,52 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  // 사용자 프로필 정보 업데이트
+  Future<void> updateProfile({
+    String? nickname,
+    String? birthdate,
+    String? location,
+    String? guardianContact,
+    String? userContact,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('User is not logged in');
+      }
+
+      final body = <String, dynamic>{};
+      if (nickname != null) body['nickname'] = nickname;
+      if (birthdate != null) body['birthdate'] = birthdate;
+      if (location != null) body['location'] = location;
+      if (guardianContact != null) body['guardianContact'] = guardianContact;
+      if (userContact != null) body['userContact'] = userContact;
+
+      final response = await http.patch(
+        Uri.parse(
+          '$_backendUrl/api/users/me/profile',
+        ), // Changed _baseUrl to _backendUrl
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        // 성공적으로 업데이트 되었으면 사용자 정보를 다시 불러옴
+        await _fetchCurrentUser(
+          token,
+        ); // Changed fetchCurrentUser() to _fetchCurrentUser(token)
+      } else {
+        throw Exception('Failed to update profile: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error updating profile: $e');
+      rethrow; // Changed throw e; to rethrow; for consistency
+    }
+  }
+
   Future<void> deleteAccount() async {
     try {
       _isLoading = true;
