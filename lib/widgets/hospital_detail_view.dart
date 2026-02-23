@@ -96,10 +96,12 @@ class HospitalDetailView extends StatelessWidget {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.location_on,
                                   size: 28,
-                                  color: Color(0xFFFF5252),
+                                  color: hospital.isOpen
+                                      ? const Color(0xFFFF5252)
+                                      : Colors.grey[400]!,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -120,8 +122,10 @@ class HospitalDetailView extends StatelessWidget {
                             Row(
                               children: [
                                 _buildTag('심장 검사 가능'),
-                                const SizedBox(width: 8),
-                                _buildTag('응급 진료 가능'),
+                                if (hospital.isEmergencyRoom) ...[
+                                  const SizedBox(width: 8),
+                                  _buildTag('응급 진료 가능'),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 12),

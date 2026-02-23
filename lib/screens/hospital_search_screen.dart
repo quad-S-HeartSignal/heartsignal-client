@@ -76,8 +76,10 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
         return distA.compareTo(distB);
       });
 
-      final BitmapDescriptor customIcon =
-          await MarkerGenerator.createCustomMarkerBitmap();
+      final BitmapDescriptor customIconOpen =
+          await MarkerGenerator.createCustomMarkerBitmap(isOpen: true);
+      final BitmapDescriptor customIconClosed =
+          await MarkerGenerator.createCustomMarkerBitmap(isOpen: false);
 
       final Set<Marker> newMarkers = {};
       for (final hospital in fetchedHospitals) {
@@ -85,7 +87,7 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
           Marker(
             markerId: MarkerId(hospital.placeId),
             position: LatLng(hospital.lat, hospital.lng),
-            icon: customIcon,
+            icon: hospital.isOpen ? customIconOpen : customIconClosed,
             onTap: () {
               if (mounted) {
                 final index = _hospitals.indexOf(hospital);

@@ -5,6 +5,7 @@ class Hospital {
   final double lat;
   final double lng;
   final bool isOpen;
+  final bool isEmergencyRoom;
   final double? rating;
   final int userRatingCount;
   final String phoneNumber;
@@ -17,6 +18,7 @@ class Hospital {
     required this.lat,
     required this.lng,
     this.isOpen = false,
+    this.isEmergencyRoom = false,
     this.rating,
     this.userRatingCount = 0,
     this.phoneNumber = '',
@@ -32,6 +34,7 @@ class Hospital {
       lat: (location['lat'] as num?)?.toDouble() ?? 0.0,
       lng: (location['lng'] as num?)?.toDouble() ?? 0.0,
       isOpen: json['isOpen'] as bool? ?? false,
+      isEmergencyRoom: json['isEmergencyRoom'] as bool? ?? false,
       rating: (json['rating'] as num?)?.toDouble(),
       userRatingCount: (json['userRatingCount'] as num?)?.toInt() ?? 0,
       phoneNumber: json['phoneNumber'] ?? '',
