@@ -50,4 +50,37 @@ class PlacesService {
       throw Exception('Failed to fetch nearby hospitals');
     }
   }
+
+  Future<List<Hospital>> searchHospitalsByKeyword({
+    required String keyword,
+    required LatLng location,
+    int radius = 10000,
+  }) async {
+    final queryParameters = {
+      'keyword': keyword,
+      'lat': location.latitude.toString(),
+      'lng': location.longitude.toString(),
+      'radius': radius.toString(),
+    };
+
+    final uri = Uri.parse(
+      '$_backendUrl/api/hospitals/search',
+    ).replace(queryParameters: queryParameters);
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+
+      if (jsonResponse['success'] == true) {
+        final List<dynamic> results = jsonResponse['data'];
+        return results.map((e) => Hospital.fromJson(e)).toList();
+      } else {
+        debugPrint('Backend API Error (Search): ${jsonResponse['message']}');
+        return [];
+      }
+    } else {
+      throw Exception('Failed to search hospitals by keyword');
+    }
+  }
 }
