@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/step_indicator.dart';
 
 class OnboardingStep2Screen extends StatefulWidget {
   final String guardianContact;
@@ -151,20 +152,13 @@ class _OnboardingStep2ScreenState extends State<OnboardingStep2Screen> {
                     },
                   ),
                   const Spacer(),
-                  // Step Indicator
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildDot(false),
-                      const SizedBox(width: 8),
-                      _buildDot(false),
-                      const SizedBox(width: 8),
-                      _buildDot(false),
-                      const SizedBox(width: 8),
-                      _buildDot(true), // Active
-                      const SizedBox(width: 8),
-                      _buildDot(false),
-                    ],
+                  const Center(
+                    child: StepIndicator(
+                      totalSteps: 5,
+                      currentStep: 3,
+                      activeColor: Color(0xFFD32F2F),
+                      inactiveColor: Colors.white54,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Consumer<AuthService>(
@@ -183,17 +177,6 @@ class _OnboardingStep2ScreenState extends State<OnboardingStep2Screen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDot(bool isActive) {
-    return Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFD32F2F) : Colors.black12,
-        shape: BoxShape.circle,
       ),
     );
   }

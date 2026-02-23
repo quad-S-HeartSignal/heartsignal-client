@@ -81,16 +81,18 @@ class _SignupStep1GuardianScreenState extends State<SignupStep1GuardianScreen> {
                   ),
                 ),
                 const Spacer(),
-                const StepIndicator(
-                  totalSteps: 5,
-                  currentStep: 2,
-                  activeColor: Color(0xFFD32F2F),
-                  inactiveColor: Colors.white54,
+                const Center(
+                  child: StepIndicator(
+                    totalSteps: 5,
+                    currentStep: 2,
+                    activeColor: Color(0xFFD32F2F),
+                    inactiveColor: Colors.white54,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 CustomButton(
                   text: '다음',
-                  backgroundColor: Colors.grey[800]!, // Example dark grey
+                  backgroundColor: Colors.grey[800]!,
                   onPressed: () {
                     context.push('/signup/birthdate');
                   },

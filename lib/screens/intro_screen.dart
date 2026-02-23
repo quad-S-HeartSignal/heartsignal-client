@@ -47,18 +47,20 @@ class IntroScreen extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons.security, 
+                      Icons.security,
                       size: 100,
                       color: Colors.blue,
                     ),
                   ),
                 ),
                 const Spacer(),
-                const StepIndicator(
-                  totalSteps: 5,
-                  currentStep: 0,
-                  activeColor: Color(0xFFD32F2F),
-                  inactiveColor: Colors.white54,
+                const Center(
+                  child: StepIndicator(
+                    totalSteps: 5,
+                    currentStep: 0,
+                    activeColor: Color(0xFFD32F2F),
+                    inactiveColor: Colors.white54,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 CustomButton(

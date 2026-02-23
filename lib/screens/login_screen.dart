@@ -56,11 +56,13 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const StepIndicator(
-                  totalSteps: 5,
-                  currentStep: 1,
-                  activeColor: Color(0xFFD32F2F),
-                  inactiveColor: Colors.white54,
+                const Center(
+                  child: StepIndicator(
+                    totalSteps: 5,
+                    currentStep: 1,
+                    activeColor: Color(0xFFD32F2F),
+                    inactiveColor: Colors.white54,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 CustomButton(

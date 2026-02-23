@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../widgets/custom_button.dart';
+import '../widgets/step_indicator.dart';
 
 class OnboardingStep1Screen extends StatefulWidget {
   const OnboardingStep1Screen({super.key});
@@ -133,20 +134,13 @@ class _OnboardingStep1ScreenState extends State<OnboardingStep1Screen> {
                     },
                   ),
                   const Spacer(),
-                  // Step Indicator
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildDot(false),
-                      const SizedBox(width: 8),
-                      _buildDot(false),
-                      const SizedBox(width: 8),
-                      _buildDot(true), // Active
-                      const SizedBox(width: 8),
-                      _buildDot(false),
-                      const SizedBox(width: 8),
-                      _buildDot(false),
-                    ],
+                  const Center(
+                    child: StepIndicator(
+                      totalSteps: 5,
+                      currentStep: 2,
+                      activeColor: Color(0xFFD32F2F),
+                      inactiveColor: Colors.white54,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   CustomButton(
@@ -161,17 +155,6 @@ class _OnboardingStep1ScreenState extends State<OnboardingStep1Screen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDot(bool isActive) {
-    return Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFD32F2F) : Colors.black12,
-        shape: BoxShape.circle,
       ),
     );
   }
@@ -193,16 +176,6 @@ class _PhoneNumberFormatter extends TextInputFormatter {
         buffer.write('-');
       }
     }
-
-    // A more robust formatter or existing library is better,
-    // but this simple logic handles standard 010 cases reasonably well for digitsOnly input.
-    // Handling deletion correctly might require more logic,
-    // but let's stick to simple insertion formatting for now.
-
-    // Better logic:
-    // 3 digits -> 3-
-    // 7 digits -> 3-4-
-    // 11 digits max
 
     var digits = text.replaceAll(RegExp(r'\D'), '');
     var formatted = '';
