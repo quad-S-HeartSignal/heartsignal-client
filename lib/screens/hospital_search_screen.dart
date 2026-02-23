@@ -119,7 +119,7 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                 }
 
                 if (_mapController != null) {
-                  final offsetLat = hospital.lat - 0.005;
+                  final offsetLat = hospital.lat - 0.009;
                   _mapController!.animateCamera(
                     CameraUpdate.newLatLng(LatLng(offsetLat, hospital.lng)),
                   );
