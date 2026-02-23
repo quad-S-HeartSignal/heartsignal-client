@@ -29,6 +29,130 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
   GoogleMapController? _mapController;
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
+  final GlobalKey<SliverAnimatedListState> _listKey =
+      GlobalKey<SliverAnimatedListState>();
+
+  List<Hospital> get _filteredHospitals {
+    if (_selectedFilter == '영업중인 병원만 보기') {
+      return _hospitals.where((h) => h.isOpen).toList();
+    } else if (_selectedFilter == '응급실만 보기') {
+      return _hospitals.where((h) => h.isEmergencyRoom).toList();
+    }
+    return _hospitals;
+  }
+
+  Future<void> _updateMarkers() async {
+    final BitmapDescriptor customIconOpen =
+        await MarkerGenerator.createCustomMarkerBitmap(isOpen: true);
+    final BitmapDescriptor customIconClosed =
+        await MarkerGenerator.createCustomMarkerBitmap(isOpen: false);
+
+    final Set<Marker> newMarkers = {};
+    for (final hospital in _filteredHospitals) {
+      newMarkers.add(
+        Marker(
+          markerId: MarkerId(hospital.placeId),
+          position: LatLng(hospital.lat, hospital.lng),
+          icon: hospital.isOpen ? customIconOpen : customIconClosed,
+          onTap: () {
+            if (mounted) {
+              final index = _filteredHospitals.indexOf(hospital);
+              if (index > 0) {
+                final removedHospital = _filteredHospitals[index];
+
+                _listKey.currentState?.removeItem(
+                  index,
+                  (context, animation) => _buildHospitalItem(
+                    context,
+                    removedHospital,
+                    animation: animation,
+                    isRemoving: true,
+                  ),
+                  duration: const Duration(milliseconds: 300),
+                );
+
+                setState(() {
+                  _hospitals.remove(removedHospital);
+                  _hospitals.insert(0, removedHospital);
+                });
+
+                _listKey.currentState?.insertItem(
+                  0,
+                  duration: const Duration(milliseconds: 300),
+                );
+              }
+
+              if (_sheetController.isAttached) {
+                _sheetController.animateTo(
+                  0.5,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
+
+              if (_mapController != null) {
+                try {
+                  final offsetLat = hospital.lat - 0.009;
+                  _mapController!.animateCamera(
+                    CameraUpdate.newLatLng(LatLng(offsetLat, hospital.lng)),
+                  );
+                } catch (e) {
+                  debugPrint('Map animation ignored (marker tap): $e');
+                }
+              }
+            }
+          },
+        ),
+      );
+    }
+
+    setState(() {
+      _markers.clear();
+      _markers.addAll(newMarkers);
+    });
+  }
+
+  void _fitCameraToBounds() {
+    if (_filteredHospitals.isNotEmpty && _mapController != null) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted) return;
+        try {
+          if (_filteredHospitals.length == 1) {
+            final first = _filteredHospitals.first;
+            _mapController!.animateCamera(
+              CameraUpdate.newLatLngZoom(
+                LatLng(first.lat - 0.009, first.lng),
+                14.0,
+              ),
+            );
+          } else {
+            double minLat = _filteredHospitals.first.lat;
+            double maxLat = _filteredHospitals.first.lat;
+            double minLng = _filteredHospitals.first.lng;
+            double maxLng = _filteredHospitals.first.lng;
+
+            for (final h in _filteredHospitals) {
+              if (h.lat < minLat) minLat = h.lat;
+              if (h.lat > maxLat) maxLat = h.lat;
+              if (h.lng < minLng) minLng = h.lng;
+              if (h.lng > maxLng) maxLng = h.lng;
+            }
+
+            final bounds = LatLngBounds(
+              southwest: LatLng(minLat, minLng),
+              northeast: LatLng(maxLat, maxLng),
+            );
+
+            _mapController!.animateCamera(
+              CameraUpdate.newLatLngBounds(bounds, 50.0),
+            );
+          }
+        } catch (e) {
+          debugPrint('Map animation ignored: $e');
+        }
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -84,100 +208,34 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
       return distA.compareTo(distB);
     });
 
-    final BitmapDescriptor customIconOpen =
-        await MarkerGenerator.createCustomMarkerBitmap(isOpen: true);
-    final BitmapDescriptor customIconClosed =
-        await MarkerGenerator.createCustomMarkerBitmap(isOpen: false);
-
-    final Set<Marker> newMarkers = {};
-    for (final hospital in fetchedHospitals) {
-      newMarkers.add(
-        Marker(
-          markerId: MarkerId(hospital.placeId),
-          position: LatLng(hospital.lat, hospital.lng),
-          icon: hospital.isOpen ? customIconOpen : customIconClosed,
-          onTap: () {
-            if (mounted) {
-              final index = _hospitals.indexOf(hospital);
-              if (index > 0) {
-                setState(() {
-                  final removedHospital = _hospitals.removeAt(index);
-                  _hospitals.insert(0, removedHospital);
-                });
-              }
-
-              if (_sheetController.isAttached) {
-                _sheetController.animateTo(
-                  0.5,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              }
-
-              if (_mapController != null) {
-                try {
-                  final offsetLat = hospital.lat - 0.009;
-                  _mapController!.animateCamera(
-                    CameraUpdate.newLatLng(LatLng(offsetLat, hospital.lng)),
-                  );
-                } catch (e) {
-                  debugPrint('Map animation ignored (marker tap): $e');
-                }
-              }
-            }
-          },
-        ),
-      );
-    }
-
-    if (mounted) {
-      setState(() {
-        _hospitals = fetchedHospitals;
-        _markers.clear();
-        _markers.addAll(newMarkers);
-        _isLoading = false;
-      });
-
-      if (fetchedHospitals.isNotEmpty && _mapController != null) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (!mounted) return;
-          try {
-            if (fetchedHospitals.length == 1) {
-              final first = fetchedHospitals.first;
-              _mapController!.animateCamera(
-                CameraUpdate.newLatLngZoom(
-                  LatLng(first.lat - 0.009, first.lng),
-                  14.0,
-                ),
-              );
-            } else {
-              double minLat = fetchedHospitals.first.lat;
-              double maxLat = fetchedHospitals.first.lat;
-              double minLng = fetchedHospitals.first.lng;
-              double maxLng = fetchedHospitals.first.lng;
-
-              for (final h in fetchedHospitals) {
-                if (h.lat < minLat) minLat = h.lat;
-                if (h.lat > maxLat) maxLat = h.lat;
-                if (h.lng < minLng) minLng = h.lng;
-                if (h.lng > maxLng) maxLng = h.lng;
-              }
-
-              final bounds = LatLngBounds(
-                southwest: LatLng(minLat, minLng),
-                northeast: LatLng(maxLat, maxLng),
-              );
-
-              _mapController!.animateCamera(
-                CameraUpdate.newLatLngBounds(bounds, 50.0),
-              );
-            }
-          } catch (e) {
-            debugPrint('Map animation ignored: $e');
-          }
-        });
+    if (_filteredHospitals.isNotEmpty && _listKey.currentState != null) {
+      for (int i = _filteredHospitals.length - 1; i >= 0; i--) {
+        _listKey.currentState!.removeItem(
+          i,
+          (context, animation) => const SizedBox(),
+          duration: const Duration(milliseconds: 100),
+        );
       }
     }
+
+    await Future.delayed(const Duration(milliseconds: 150));
+
+    setState(() {
+      _hospitals = fetchedHospitals;
+      _isLoading = false;
+    });
+
+    if (_filteredHospitals.isNotEmpty && _listKey.currentState != null) {
+      for (int i = 0; i < _filteredHospitals.length; i++) {
+        _listKey.currentState!.insertItem(
+          i,
+          duration: const Duration(milliseconds: 300),
+        );
+      }
+    }
+
+    await _updateMarkers();
+    _fitCameraToBounds();
   }
 
   Future<void> _searchHospitals(String keyword) async {
@@ -186,7 +244,6 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _selectedHospital = null;
     });
 
     try {
@@ -238,11 +295,41 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                         style: GoogleFonts.notoSans(fontSize: 16),
                         textAlign: TextAlign.center,
                       ),
-                      onTap: () {
+                      onTap: () async {
+                        if (_filteredHospitals.isNotEmpty &&
+                            _listKey.currentState != null) {
+                          for (
+                            int i = _filteredHospitals.length - 1;
+                            i >= 0;
+                            i--
+                          ) {
+                            _listKey.currentState!.removeItem(
+                              i,
+                              (context, animation) => const SizedBox(),
+                              duration: const Duration(milliseconds: 100),
+                            );
+                          }
+                        }
+
+                        await Future.delayed(const Duration(milliseconds: 150));
+
                         setState(() {
                           _selectedFilter = filters[index];
                         });
-                        Navigator.pop(context);
+                        if (mounted) Navigator.pop(context);
+
+                        if (_filteredHospitals.isNotEmpty &&
+                            _listKey.currentState != null) {
+                          for (int i = 0; i < _filteredHospitals.length; i++) {
+                            _listKey.currentState!.insertItem(
+                              i,
+                              duration: const Duration(milliseconds: 300),
+                            );
+                          }
+                        }
+
+                        await _updateMarkers();
+                        _fitCameraToBounds();
                       },
                     );
                   },
@@ -258,13 +345,15 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
   Widget _buildHospitalItem(
     BuildContext context,
     Hospital hospital, {
+    Animation<double>? animation,
     bool isRemoving = false,
   }) {
-    return Padding(
+    final child = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          if (!isRemoving && _hospitals.indexOf(hospital) > 0) const Divider(),
+          if (!isRemoving && _filteredHospitals.indexOf(hospital) > 0)
+            const Divider(),
           HospitalCard(
             hospital: hospital,
             userLocation: _currentPosition,
@@ -274,29 +363,24 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
               });
             },
           ),
-          if (_hospitals.isNotEmpty && _hospitals.last == hospital)
+          if (_filteredHospitals.isNotEmpty &&
+              _filteredHospitals.last == hospital)
             const SizedBox(height: 120),
         ],
       ),
     );
+
+    if (animation != null) {
+      return SizeTransition(
+        sizeFactor: animation,
+        child: FadeTransition(opacity: animation, child: child),
+      );
+    }
+    return child;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_selectedHospital != null) {
-      return HospitalDetailView(
-        hospital: _selectedHospital!,
-        totalCount: _hospitals.length,
-        selectedRegion: '현재 위치 주변',
-        userLocation: _currentPosition,
-        onClose: () {
-          setState(() {
-            _selectedHospital = null;
-          });
-        },
-      );
-    }
-
     return Scaffold(
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -395,15 +479,11 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                           ),
                         ],
                       ),
-                      child: ListView.builder(
+                      child: CustomScrollView(
                         controller: scrollController,
-                        padding: EdgeInsets.zero,
-                        itemCount: _hospitals.isEmpty && _errorMessage == null
-                            ? 2
-                            : _hospitals.length + 1,
-                        itemBuilder: (context, index) {
-                          if (index == 0) {
-                            return Column(
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Center(
@@ -430,7 +510,7 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        '${_hospitals.length}개',
+                                        '${_filteredHospitals.length}개',
                                         style: GoogleFonts.notoSans(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -482,34 +562,68 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                                   ),
                                 ),
                               ],
-                            );
-                          }
-
-                          if (_errorMessage != null) {
-                            return Container(
-                              height: 300,
-                              alignment: Alignment.center,
-                              child: Text(_errorMessage!),
-                            );
-                          }
-
-                          if (_hospitals.isEmpty) {
-                            return Container(
-                              height: 300,
-                              alignment: Alignment.center,
-                              child: const Text('주변에 병원이 없습니다.'),
-                            );
-                          }
-
-                          final hospitalIndex = index - 1;
-                          final hospital = _hospitals[hospitalIndex];
-
-                          return _buildHospitalItem(context, hospital);
-                        },
+                            ),
+                          ),
+                          if (_errorMessage != null)
+                            SliverToBoxAdapter(
+                              child: Container(
+                                height: 300,
+                                alignment: Alignment.center,
+                                child: Text(_errorMessage!),
+                              ),
+                            )
+                          else if (_filteredHospitals.isEmpty && !_isLoading)
+                            SliverToBoxAdapter(
+                              child: Container(
+                                height: 300,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  _selectedFilter == '모든 병원 보기'
+                                      ? '주변에 병원이 없습니다.'
+                                      : '해당 조건에 맞는 병원이 없습니다.',
+                                  style: GoogleFonts.notoSans(
+                                    fontSize: 15,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            SliverAnimatedList(
+                              key: _listKey,
+                              initialItemCount: _filteredHospitals.length,
+                              itemBuilder: (context, index, animation) {
+                                if (index >= _filteredHospitals.length) {
+                                  return const SizedBox();
+                                }
+                                final hospital = _filteredHospitals[index];
+                                return _buildHospitalItem(
+                                  context,
+                                  hospital,
+                                  animation: animation,
+                                );
+                              },
+                            ),
+                        ],
                       ),
                     );
                   },
                 ),
+
+                if (_selectedHospital != null)
+                  Positioned.fill(
+                    child: HospitalDetailView(
+                      hospital: _selectedHospital!,
+                      onClose: () {
+                        setState(() {
+                          _selectedHospital = null;
+                        });
+                      },
+                      totalCount: _filteredHospitals.length,
+                      selectedRegion: _selectedFilter,
+                      userLocation: _currentPosition,
+                    ),
+                  ),
               ],
             ),
     );

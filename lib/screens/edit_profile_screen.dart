@@ -28,7 +28,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     _nameController = TextEditingController(text: user?.nickname ?? '');
     _birthdateController = TextEditingController(text: user?.birthdate ?? '');
-    _locationController = TextEditingController(text: user?.location ?? '');
+    _locationController = TextEditingController(text: '서울역 1호선');
     _guardianContactController = TextEditingController(
       text: user?.guardianContact ?? '',
     );
@@ -109,6 +109,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String label,
     TextEditingController controller, {
     Widget? suffixIcon,
+    bool readOnly = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,7 +132,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           child: TextField(
             controller: controller,
-            style: GoogleFonts.notoSans(fontSize: 16, color: Colors.black),
+            readOnly: readOnly,
+            style: GoogleFonts.notoSans(
+              fontSize: 16,
+              color: readOnly ? Colors.grey[600] : Colors.black,
+            ),
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -214,7 +219,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   size: 20,
                 ),
               ),
-              _buildTextField('위치', _locationController),
+              _buildTextField('위치', _locationController, readOnly: true),
               _buildTextField('보호자 연락처', _guardianContactController),
               _buildTextField('사용자 연락처', _userContactController),
 
