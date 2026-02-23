@@ -28,6 +28,7 @@ class AuthService extends ChangeNotifier {
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _currentUser != null;
+  String get backendUrl => _backendUrl;
 
   Future<void> loginWithKakao() async {
     try {
