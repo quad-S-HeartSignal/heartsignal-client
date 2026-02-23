@@ -10,8 +10,9 @@ import '../services/auth_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final bool isActive;
+  final ValueChanged<bool>? onFocusChange;
 
-  const ChatScreen({super.key, this.isActive = true});
+  const ChatScreen({super.key, this.isActive = true, this.onFocusChange});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -20,6 +21,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   final List<ChatMessage> _messages = [];
   bool _showRecommendations = true;
   bool _isTyping = false;
@@ -31,6 +33,7 @@ class _ChatScreenState extends State<ChatScreen>
   void initState() {
     super.initState();
     _textController.addListener(_onTextChanged);
+    _focusNode.addListener(_onFocusChanged);
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -38,6 +41,11 @@ class _ChatScreenState extends State<ChatScreen>
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted && widget.isActive) _animationController.forward();
     });
+  }
+
+  void _onFocusChanged() {
+    setState(() {});
+    widget.onFocusChange?.call(_focusNode.hasFocus);
   }
 
   @override
@@ -59,10 +67,26 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChanged);
+    _focusNode.dispose();
     _textController.removeListener(_onTextChanged);
     _animationController.dispose();
     _textController.dispose();
     super.dispose();
+  }
+
+  void _startNewChat() {
+    setState(() {
+      _messages.clear();
+      _showRecommendations = true;
+      _textController.clear();
+      _isTyping = false;
+      _isBotTyping = false;
+    });
+    _animationController.reset();
+    if (widget.isActive) {
+      _animationController.forward();
+    }
   }
 
   Future<void> _handleSubmitted(String text) async {
@@ -134,7 +158,7 @@ class _ChatScreenState extends State<ChatScreen>
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
       ),
-      drawer: const ChatHistoryDrawer(),
+      drawer: ChatHistoryDrawer(onNewChat: _startNewChat),
       body: Column(
         children: [
           Expanded(
@@ -173,11 +197,11 @@ class _ChatScreenState extends State<ChatScreen>
             style: GoogleFonts.notoSans(fontSize: 16, color: Colors.grey[600]),
           ),
           const SizedBox(height: 40),
-          _buildAnimatedButton('추천 1', 0),
+          _buildAnimatedButton('최근 가슴이 답답한데 어떻게 해야 하나요?', 0),
           const SizedBox(height: 12),
-          _buildAnimatedButton('추천 2', 1),
+          _buildAnimatedButton('협심증의 주요 증상이 궁금해요.', 1),
           const SizedBox(height: 12),
-          _buildAnimatedButton('추천 3', 2),
+          _buildAnimatedButton('심장 건강에 좋은 운동 추천해주세요.', 2),
         ],
       ),
     );
@@ -310,10 +334,11 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Widget _buildInputArea() {
+    final isFocused = _focusNode.hasFocus;
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFFDE8E8),
+        color: isFocused ? const Color(0xFFFBA9A9) : const Color(0xFFFDE8E8),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
@@ -326,16 +351,23 @@ class _ChatScreenState extends State<ChatScreen>
             onPressed: () {},
           ),
           Expanded(
-            child: TextField(
-              controller: _textController,
-              onTap: _hideRecommendations,
-              decoration: InputDecoration(
-                hintText: '메시지를 입력하세요..',
-                hintStyle: GoogleFonts.notoSans(color: Colors.grey[600]),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Container(
+              child: TextField(
+                controller: _textController,
+                focusNode: _focusNode,
+                onTap: _hideRecommendations,
+                style: GoogleFonts.notoSans(color: Colors.black),
+                cursorColor: Colors.white,
+                decoration: InputDecoration(
+                  hintText: isFocused ? '' : '메시지를 입력하세요..',
+                  hintStyle: GoogleFonts.notoSans(
+                    color: isFocused ? Colors.transparent : Colors.grey[600],
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                onSubmitted: _handleSubmitted,
               ),
-              onSubmitted: _handleSubmitted,
             ),
           ),
           if (!_isTyping)
@@ -350,20 +382,32 @@ class _ChatScreenState extends State<ChatScreen>
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.all(8),
                 decoration: const BoxDecoration(
-                  color: Colors.black,
+                  color: Colors.white,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.arrow_upward,
-                  color: Colors.white,
+                  color: Colors.black,
                   size: 20,
                 ),
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.send, color: Colors.black),
-              onPressed: () => _handleSubmitted(_textController.text),
+            GestureDetector(
+              onTap: () => _handleSubmitted(_textController.text),
+              child: Container(
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_upward,
+                  color: Colors.black,
+                  size: 20,
+                ),
+              ),
             ),
         ],
       ),

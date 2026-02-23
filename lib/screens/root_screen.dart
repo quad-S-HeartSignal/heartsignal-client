@@ -14,16 +14,26 @@ class RootScreen extends StatefulWidget {
 
 class _RootScreenState extends State<RootScreen> {
   int _currentIndex = 0;
+  bool _isChatFocused = false;
+
+  void _onChatFocusChanged(bool isFocused) {
+    if (_isChatFocused != isFocused) {
+      setState(() {
+        _isChatFocused = isFocused;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
-
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          ChatScreen(isActive: _currentIndex == 0),
+          ChatScreen(
+            isActive: _currentIndex == 0,
+            onFocusChange: _onChatFocusChanged,
+          ),
           const HospitalSearchScreen(),
           const ProfileScreen(),
         ],
@@ -38,7 +48,7 @@ class _RootScreenState extends State<RootScreen> {
         onEmergencyTap: () {
           context.push('/emergency');
         },
-        isKeyboardOpen: isKeyboardOpen && _currentIndex == 0,
+        isKeyboardOpen: _isChatFocused && _currentIndex == 0,
       ),
     );
   }

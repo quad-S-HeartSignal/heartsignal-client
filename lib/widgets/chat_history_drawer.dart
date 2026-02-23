@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ChatHistoryDrawer extends StatefulWidget {
-  const ChatHistoryDrawer({super.key});
+  final VoidCallback? onNewChat;
+
+  const ChatHistoryDrawer({super.key, this.onNewChat});
 
   @override
   State<ChatHistoryDrawer> createState() => _ChatHistoryDrawerState();
@@ -63,9 +65,50 @@ class _ChatHistoryDrawerState extends State<ChatHistoryDrawer> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 8.0,
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  if (widget.onNewChat != null) {
+                    widget.onNewChat!();
+                  }
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFEF5350),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(
+                      color: Color(0xFFEF5350),
+                      width: 1.5,
+                    ),
+                  ),
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.add_circle_outline, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      '새로운 채팅 시작하기',
+                      style: GoogleFonts.notoSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 24.0,
+                right: 24.0,
+                top: 24.0,
+                bottom: 8.0,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
