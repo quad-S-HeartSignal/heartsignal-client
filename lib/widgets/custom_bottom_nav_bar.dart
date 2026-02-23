@@ -22,7 +22,7 @@ class CustomBottomNavBar extends StatelessWidget {
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
         color: isKeyboardOpen
-            ? const Color(0xFFFDE8E8)
+            ? const Color(0xFFFBA9A9)
             : const Color(0xFFFA7B7B),
         borderRadius: currentIndex == 0
             ? BorderRadius.zero
@@ -39,9 +39,10 @@ class CustomBottomNavBar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(
-                  0xFFE53935,
-                ), // Deeper red for Emergency button
+                color: isKeyboardOpen
+                    ? Colors
+                          .grey // Gray when keyboard is open
+                    : const Color(0xFFE53935), // Deeper red otherwise
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Text(
@@ -89,9 +90,7 @@ class CustomBottomNavBar extends StatelessWidget {
           Icon(
             icon,
             size: 24,
-            color: isSelected
-                ? (isKeyboardOpen ? Colors.black87 : Colors.white)
-                : (isKeyboardOpen ? Colors.black54 : Colors.white70),
+            color: isSelected ? Colors.white : Colors.white70,
           ),
           const SizedBox(height: 4),
           Text(
@@ -99,9 +98,7 @@ class CustomBottomNavBar extends StatelessWidget {
             style: GoogleFonts.notoSans(
               fontSize: 12,
               fontWeight: FontWeight.normal,
-              color: isSelected
-                  ? (isKeyboardOpen ? Colors.black87 : Colors.white)
-                  : (isKeyboardOpen ? Colors.black54 : Colors.white70),
+              color: isSelected ? Colors.white : Colors.white70,
             ),
           ),
         ],
