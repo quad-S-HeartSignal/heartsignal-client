@@ -73,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
                           context,
                         ).copyWith(dividerColor: Colors.transparent),
                         child: ExpansionTile(
-                          initiallyExpanded: true,
+                          initiallyExpanded: false,
                           tilePadding: EdgeInsets.zero,
                           leading: const Icon(
                             Icons.article_outlined,
@@ -116,7 +116,7 @@ class ProfileScreen extends StatelessWidget {
                             _ReadOnlyExpandableProfileItem(
                               icon: Icons.location_on_outlined,
                               title: '위치',
-                              value: user?.location ?? '',
+                              value: '서울역 1호선',
                             ),
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 16.0),

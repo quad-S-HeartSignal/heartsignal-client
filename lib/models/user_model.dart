@@ -24,7 +24,7 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    debugPrint('Parsing User: $json'); 
+    debugPrint('Parsing User: $json');
     return User(
       id: json['id']?.toString() ?? '',
       nickname: json['nickname'],
@@ -32,9 +32,10 @@ class User {
       email: json['email'],
       isOnboarded: false,
       birthdate: json['birthdate'],
-      location: json['location'],
-      guardianContact: json['guardian_contact'],
-      userContact: json['user_contact'] ?? json['phone_number'],
+      location: '서울역 1호선',
+      guardianContact: json['guardian_contact'] ?? json['guardianContact'],
+      userContact:
+          json['user_contact'] ?? json['phone_number'] ?? json['userContact'],
     );
   }
 }

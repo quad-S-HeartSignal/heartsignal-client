@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../widgets/chat_history_drawer.dart';
 import '../widgets/custom_header.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../models/chat_message.dart';
@@ -114,7 +115,10 @@ class _ChatScreenState extends State<ChatScreen>
 
         if (mounted) {
           setState(() {
-            _messages.insert(0, ChatMessage(text: botReply, isUser: false));
+            _messages.insert(
+              0,
+              ChatMessage(text: botReply, isUser: false, isAnimating: true),
+            );
           });
         }
       } else {
@@ -126,7 +130,11 @@ class _ChatScreenState extends State<ChatScreen>
         setState(() {
           _messages.insert(
             0,
-            ChatMessage(text: '앗, 오류가 발생했어요. 잠시 후 다시 시도해주세요.', isUser: false),
+            ChatMessage(
+              text: '앗, 오류가 발생했어요. 잠시 후 다시 시도해주세요.',
+              isUser: false,
+              isAnimating: true,
+            ),
           );
         });
       }
@@ -326,7 +334,7 @@ class _ChatScreenState extends State<ChatScreen>
                       height: 1.4,
                     ),
                   )
-                : _buildBotMessageWithDisclaimer(message.text),
+                : _buildBotMessageWithDisclaimer(message),
           ),
         );
       },
@@ -352,21 +360,31 @@ class _ChatScreenState extends State<ChatScreen>
           ),
           Expanded(
             child: Container(
-              child: TextField(
-                controller: _textController,
-                focusNode: _focusNode,
-                onTap: _hideRecommendations,
-                style: GoogleFonts.notoSans(color: Colors.black),
-                cursorColor: Colors.white,
-                decoration: InputDecoration(
-                  hintText: isFocused ? '' : '메시지를 입력하세요..',
-                  hintStyle: GoogleFonts.notoSans(
-                    color: isFocused ? Colors.transparent : Colors.grey[600],
+              constraints: const BoxConstraints(maxHeight: 120),
+              child: Scrollbar(
+                child: TextField(
+                  controller: _textController,
+                  focusNode: _focusNode,
+                  onTap: _hideRecommendations,
+                  style: GoogleFonts.notoSans(color: Colors.black),
+                  cursorColor: Colors.white,
+                  minLines: 1,
+                  maxLines: 5,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(
+                    hintText: isFocused ? '' : '메시지를 입력하세요..',
+                    hintStyle: GoogleFonts.notoSans(
+                      color: isFocused ? Colors.transparent : Colors.grey[600],
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
                   ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  onSubmitted: _handleSubmitted,
                 ),
-                onSubmitted: _handleSubmitted,
               ),
             ),
           ),
@@ -414,8 +432,20 @@ class _ChatScreenState extends State<ChatScreen>
     );
   }
 
-  Widget _buildBotMessageWithDisclaimer(String text) {
+  Widget _buildBotMessageWithDisclaimer(ChatMessage message) {
     const disclaimer = '이 정보는 참고용이며, 정확한 진단은 전문의와 상담해야 합니다.';
+    final text = message.text;
+
+    if (message.isAnimating) {
+      return TypewriterText(
+        text: text,
+        disclaimer: text.contains(disclaimer) ? disclaimer : null,
+        onComplete: () {
+          message.isAnimating = false;
+        },
+      );
+    }
+
     if (text.contains(disclaimer)) {
       final parts = text.split(disclaimer);
       final mainText = parts[0].trimRight();
@@ -441,6 +471,88 @@ class _ChatScreenState extends State<ChatScreen>
     return Text(
       text,
       style: GoogleFonts.notoSans(color: Colors.black87, height: 1.4),
+    );
+  }
+}
+
+class TypewriterText extends StatefulWidget {
+  final String text;
+  final String? disclaimer;
+  final VoidCallback onComplete;
+
+  const TypewriterText({
+    super.key,
+    required this.text,
+    this.disclaimer,
+    required this.onComplete,
+  });
+
+  @override
+  State<TypewriterText> createState() => _TypewriterTextState();
+}
+
+class _TypewriterTextState extends State<TypewriterText> {
+  String _displayedText = '';
+  Timer? _timer;
+  int _currentIndex = 0;
+  bool _showDisclaimer = false;
+  late String _mainText;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.disclaimer != null && widget.text.contains(widget.disclaimer!)) {
+      _mainText = widget.text.split(widget.disclaimer!)[0].trimRight();
+    } else {
+      _mainText = widget.text;
+    }
+    _startTyping();
+  }
+
+  void _startTyping() {
+    _timer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      if (_currentIndex < _mainText.length) {
+        setState(() {
+          _currentIndex++;
+          _displayedText = _mainText.substring(0, _currentIndex);
+        });
+      } else {
+        _timer?.cancel();
+        if (widget.disclaimer != null) {
+          setState(() {
+            _showDisclaimer = true;
+          });
+        }
+        widget.onComplete();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_displayedText.isNotEmpty)
+          Text(
+            _displayedText,
+            style: GoogleFonts.notoSans(color: Colors.black87, height: 1.4),
+          ),
+        if (_showDisclaimer) ...[
+          const SizedBox(height: 8),
+          Text(
+            widget.disclaimer!,
+            style: GoogleFonts.notoSans(color: Colors.grey[500], fontSize: 12),
+          ),
+        ],
+      ],
     );
   }
 }
