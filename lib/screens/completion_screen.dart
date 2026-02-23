@@ -91,15 +91,15 @@ class CompletionScreen extends StatelessWidget {
                   },
                 ),
                 const Spacer(flex: 3),
-                // Step Indicator
-                const StepIndicator(
-                  totalSteps: 5,
-                  currentStep: 4,
-                  activeColor: Color(0xFFD32F2F),
-                  inactiveColor: Colors.white54,
+                const Center(
+                  child: StepIndicator(
+                    totalSteps: 5,
+                    currentStep: 4,
+                    activeColor: Color(0xFFD32F2F),
+                    inactiveColor: Colors.white54,
+                  ),
                 ),
                 const SizedBox(height: 40),
-                // Enter Button
                 CustomButton(
                   text: '들어가기',
                   backgroundColor: const Color(0xFFD32F2F),

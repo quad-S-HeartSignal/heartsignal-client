@@ -65,13 +65,12 @@ class _SignupStep2BirthdateScreenState
                   keyboardType: TextInputType.datetime,
                 ),
                 const Spacer(),
-                // Placeholder for the 3D Robot Image
                 Center(
                   child: Container(
                     width: 150,
                     height: 150,
                     decoration: BoxDecoration(
-                      color: Colors.blue[50], // Light blue placeholder
+                      color: Colors.blue[50],
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -82,11 +81,13 @@ class _SignupStep2BirthdateScreenState
                   ),
                 ),
                 const Spacer(),
-                const StepIndicator(
-                  totalSteps: 5,
-                  currentStep: 3,
-                  activeColor: Color(0xFFD32F2F),
-                  inactiveColor: Colors.white54,
+                const Center(
+                  child: StepIndicator(
+                    totalSteps: 5,
+                    currentStep: 3,
+                    activeColor: Color(0xFFD32F2F),
+                    inactiveColor: Colors.white54,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 CustomButton(

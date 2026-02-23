@@ -224,7 +224,7 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                 },
               ),
               if (_hospitals.isNotEmpty && _hospitals.last == hospital)
-                const SizedBox(height: 120), 
+                const SizedBox(height: 120),
             ],
           ),
         ),
@@ -267,7 +267,7 @@ class _HospitalSearchScreenState extends State<HospitalSearchScreen> {
                         },
                         myLocationEnabled: true,
                         myLocationButtonEnabled: false,
-                        zoomControlsEnabled: false,
+                        zoomControlsEnabled: true,
                         markers: _markers,
                       ),
                     ),
