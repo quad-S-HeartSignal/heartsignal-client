@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/chat_history_drawer.dart';
 import '../widgets/custom_header.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import '../models/chat_message.dart';
 import '../services/auth_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -17,9 +20,10 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
-  final List<String> _messages = [];
+  final List<ChatMessage> _messages = [];
   bool _showRecommendations = true;
   bool _isTyping = false;
+  bool _isBotTyping = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late AnimationController _animationController;
 
@@ -61,13 +65,54 @@ class _ChatScreenState extends State<ChatScreen>
     super.dispose();
   }
 
-  void _handleSubmitted(String text) {
+  Future<void> _handleSubmitted(String text) async {
     if (text.isEmpty) return;
     _textController.clear();
     setState(() {
-      _messages.insert(0, text);
+      _messages.insert(0, ChatMessage(text: text, isUser: true));
       _showRecommendations = false;
+      _isBotTyping = true;
     });
+
+    try {
+      final authService = context.read<AuthService>();
+      final backendUrl = authService.backendUrl;
+
+      final response = await http.post(
+        Uri.parse('$backendUrl/api/chat'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userMessage': text}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final botReply = data['reply'] ?? '응답을 받지 못했습니다.';
+
+        if (mounted) {
+          setState(() {
+            _messages.insert(0, ChatMessage(text: botReply, isUser: false));
+          });
+        }
+      } else {
+        throw Exception('Failed to load response: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Chat API Error: $e');
+      if (mounted) {
+        setState(() {
+          _messages.insert(
+            0,
+            ChatMessage(text: '앗, 오류가 발생했어요. 잠시 후 다시 시도해주세요.', isUser: false),
+          );
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBotTyping = false;
+        });
+      }
+    }
   }
 
   void _hideRecommendations() {
@@ -197,26 +242,67 @@ class _ChatScreenState extends State<ChatScreen>
     return ListView.builder(
       reverse: true,
       padding: const EdgeInsets.all(16.0),
-      itemCount: _messages.length,
+      itemCount: _messages.length + (_isBotTyping ? 1 : 0),
       itemBuilder: (context, index) {
-        return Align(
-          alignment: Alignment.centerRight,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFA7B7B),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(4),
+        if (_isBotTyping && index == 0) {
+          return Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                  bottomLeft: Radius.circular(4),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
+              child: const SizedBox(
+                width: 40,
+                height: 20,
+                child: Center(
+                  child: LinearProgressIndicator(
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                  ),
+                ),
               ),
             ),
-            child: Text(
-              _messages[index],
-              style: GoogleFonts.notoSans(color: Colors.white),
+          );
+        }
+
+        final messageIndex = _isBotTyping ? index - 1 : index;
+        final message = _messages[messageIndex];
+        final isUser = message.isUser;
+
+        return Align(
+          alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
             ),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isUser ? const Color(0xFFFA7B7B) : Colors.grey[200],
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
+                bottomLeft: Radius.circular(isUser ? 16 : 4),
+                bottomRight: Radius.circular(isUser ? 4 : 16),
+              ),
+            ),
+            child: isUser
+                ? Text(
+                    message.text,
+                    style: GoogleFonts.notoSans(
+                      color: Colors.white,
+                      height: 1.4,
+                    ),
+                  )
+                : _buildBotMessageWithDisclaimer(message.text),
           ),
         );
       },
@@ -281,6 +367,36 @@ class _ChatScreenState extends State<ChatScreen>
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBotMessageWithDisclaimer(String text) {
+    const disclaimer = '이 정보는 참고용이며, 정확한 진단은 전문의와 상담해야 합니다.';
+    if (text.contains(disclaimer)) {
+      final parts = text.split(disclaimer);
+      final mainText = parts[0].trimRight();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (mainText.isNotEmpty)
+            Text(
+              mainText,
+              style: GoogleFonts.notoSans(color: Colors.black87, height: 1.4),
+            ),
+          if (mainText.isNotEmpty) const SizedBox(height: 8),
+          Text(
+            disclaimer,
+            style: GoogleFonts.notoSans(color: Colors.grey[500], fontSize: 12),
+          ),
+        ],
+      );
+    }
+
+    return Text(
+      text,
+      style: GoogleFonts.notoSans(color: Colors.black87, height: 1.4),
     );
   }
 }
