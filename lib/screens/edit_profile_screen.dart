@@ -21,6 +21,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isModified = false;
   bool _isLoading = false;
 
+  String? _nameError;
+  String? _birthdateError;
+  String? _guardianContactError;
+  String? _userContactError;
+  bool _hasErrors = false;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +47,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _locationController.addListener(_checkIfModified);
     _guardianContactController.addListener(_checkIfModified);
     _userContactController.addListener(_checkIfModified);
+
+    _checkIfModified();
   }
 
   void _checkIfModified() {
@@ -52,9 +60,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _guardianContactController.text != (user?.guardianContact ?? '') ||
         _userContactController.text != (user?.userContact ?? '');
 
-    if (_isModified != isModified) {
+    String? nameErr;
+    if (_nameController.text.trim().isEmpty) {
+      nameErr = '이름을 입력해주세요.';
+    }
+
+    String? birthErr;
+    final dateRegex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+    if (_birthdateController.text.isNotEmpty &&
+        !dateRegex.hasMatch(_birthdateController.text)) {
+      birthErr = 'YYYY-MM-DD 형식으로 입력해주세요.';
+    }
+
+    String? guardErr;
+    final phoneRegex = RegExp(r'^01[0-9]-\d{3,4}-\d{4}$');
+    if (_guardianContactController.text.isNotEmpty &&
+        !phoneRegex.hasMatch(_guardianContactController.text)) {
+      guardErr = '010-1234-5678 형식으로 입력해주세요.';
+    }
+
+    String? userErr;
+    if (_userContactController.text.isNotEmpty &&
+        !phoneRegex.hasMatch(_userContactController.text)) {
+      userErr = '010-1234-5678 형식으로 입력해주세요.';
+    }
+
+    final hasErrors =
+        nameErr != null ||
+        birthErr != null ||
+        guardErr != null ||
+        userErr != null;
+
+    if (_isModified != isModified ||
+        _nameError != nameErr ||
+        _birthdateError != birthErr ||
+        _guardianContactError != guardErr ||
+        _userContactError != userErr ||
+        _hasErrors != hasErrors) {
       setState(() {
         _isModified = isModified;
+        _nameError = nameErr;
+        _birthdateError = birthErr;
+        _guardianContactError = guardErr;
+        _userContactError = userErr;
+        _hasErrors = hasErrors;
       });
     }
   }
@@ -110,6 +159,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     TextEditingController controller, {
     Widget? suffixIcon,
     bool readOnly = false,
+    String? errorText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,11 +193,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 vertical: 16,
               ),
               border: InputBorder.none,
-              // Add red suffix icon conditionally if provided
               suffixIcon: suffixIcon,
             ),
           ),
         ),
+        if (errorText != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, top: 4.0),
+            child: Text(
+              errorText,
+              style: GoogleFonts.notoSans(fontSize: 12, color: Colors.red),
+            ),
+          ),
         const SizedBox(height: 16),
       ],
     );
@@ -160,7 +217,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final profileImage = user?.profileImage;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF5F5), // Light pink background
+      backgroundColor: const Color(0xFFFFF5F5), 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -197,7 +254,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
-              // Nickname
               Text(
                 '$nickname님',
                 style: GoogleFonts.notoSans(
@@ -208,20 +264,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Input Fields
-              _buildTextField('이름', _nameController),
+              _buildTextField('이름', _nameController, errorText: _nameError),
               _buildTextField(
                 '생년월일',
                 _birthdateController,
                 suffixIcon: const Icon(
                   Icons.calendar_today_outlined,
-                  color: Color(0xFFEF5350), // Reddish icon
+                  color: Color(0xFFEF5350),
                   size: 20,
                 ),
+                errorText: _birthdateError,
               ),
               _buildTextField('위치', _locationController, readOnly: true),
-              _buildTextField('보호자 연락처', _guardianContactController),
-              _buildTextField('사용자 연락처', _userContactController),
+              _buildTextField(
+                '보호자 연락처',
+                _guardianContactController,
+                errorText: _guardianContactError,
+              ),
+              _buildTextField(
+                '사용자 연락처',
+                _userContactController,
+                errorText: _userContactError,
+              ),
 
               const SizedBox(height: 40),
             ],
@@ -235,10 +299,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: _isModified && !_isLoading ? _saveProfile : null,
+              onPressed: _isModified && !_hasErrors && !_isLoading
+                  ? _saveProfile
+                  : null,
               style: ElevatedButton.styleFrom(
                 disabledBackgroundColor: Colors.grey[350],
-                backgroundColor: const Color(0xFFEF5350), // Red color
+                backgroundColor: const Color(0xFFEF5350),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
